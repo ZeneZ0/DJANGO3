@@ -21,6 +21,7 @@ class PCConfigurationSerializer(serializers.ModelSerializer):
     class Meta:
         model = PCConfiguration
         fields = ['id', 'name', 'description', 'cpu', 'gpu', 'motherboard', 'ram', 'storage', 'power_supply', 'case', 'total_price', 'created_at']
+        read_only_fields = ['total_price']  
 
 class BuildRequestSerializer(serializers.ModelSerializer):
     class Meta:

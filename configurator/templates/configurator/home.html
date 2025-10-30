@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+</head>
+<body>
+    <h1>{{ welcome_message }}</h1>
+    
+    <div class="stats">
+        <p>Всего компонентов в базе: {{ components_count }}</p>
+    </div>
+    
+    <div class="recent-configs">
+        <h2>Последние конфигурации:</h2>
+        {% if recent_configs %}
+            <ul>
+            {% for config in recent_configs %}
+                <li>{{ config.name }} - {{ config.total_price }} руб.</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>Пока нет созданных конфигураций</p>
+        {% endif %}
+    </div>
+    
+    <nav>
+        <a href="{% url 'about' %}">О проекте</a> |
+        <a href="/admin/">Админка</a>
+    </nav>
+</body>
+</html>

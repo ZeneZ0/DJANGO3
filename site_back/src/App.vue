@@ -8,6 +8,7 @@
         <router-link to="/about" class="nav-link">О проекте</router-link>
         <router-link to="/reactive" class="nav-link">Реактивные переменные</router-link>
         <router-link to="/arrays" class="nav-link">Работа с массивами</router-link>
+        <router-link to="/backend-data" class="nav-link">Данные с бекенда</router-link>
       </div>
     </nav>
     

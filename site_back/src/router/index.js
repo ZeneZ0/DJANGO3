@@ -22,6 +22,11 @@ const routes = [
   path: '/arrays',
   name: 'arrays',
   component: () => import('../views/ArraysView.vue')
+  },
+  {
+  path: '/backend-data',
+  name: 'backend-data',
+  component: () => import('../views/BackendDataView.vue')
   }
 ]
 

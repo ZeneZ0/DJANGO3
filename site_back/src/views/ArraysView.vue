@@ -1,7 +1,11 @@
-
+<!-- site_back/src/views/ArraysView.vue -->
 <template>
   <div class="arrays-view">
     <h1>📋 Работа с массивами</h1>
+    
+    <div class="currency-note">
+      💰 Все цены в долларах США ($)
+    </div>
     
     <div class="demo-section">
       <h2>🛒 Компоненты для ПК</h2>
@@ -11,7 +15,7 @@
         <h3>➕ Добавить компонент</h3>
         <form @submit.prevent="addComponent" class="form">
           <input v-model="newComponent.name" placeholder="Название" required>
-          <input v-model.number="newComponent.price" type="number" placeholder="Цена" required>
+          <input v-model.number="newComponent.price" type="number" placeholder="Цена ($)" required>
           <select v-model="newComponent.type">
             <option value="">Выберите тип</option>
             <option value="cpu">Процессор</option>
@@ -55,13 +59,13 @@
                class="component-item"
                :class="{
                  'selected': selectedComponents.includes(component.id),
-                 'expensive': component.price > 50000
+                 'expensive': component.price > 500
                }">
             
             <div class="component-info">
               <h4>{{ component.name }}</h4>
               <p class="component-type">{{ getTypeName(component.type) }}</p>
-              <p class="component-price">{{ component.price }} руб.</p>
+              <p class="component-price">{{ formatPrice(component.price) }}</p>
             </div>
             
             <div class="component-actions">
@@ -86,15 +90,15 @@
           <div v-for="id in selectedComponents" 
                :key="id" 
                class="selected-item">
-            {{ getComponentById(id)?.name }} - {{ getComponentById(id)?.price }} руб.
+            {{ getComponentById(id)?.name }} - {{ formatPrice(getComponentById(id)?.price) }}
             <button @click="removeFromSelection(id)" class="remove-btn">✕</button>
           </div>
         </div>
         
         <div class="selection-stats">
-          <p><strong>Итого:</strong> {{ totalSelectedPrice }} руб.</p>
+          <p><strong>Итого:</strong> {{ formatPrice(totalSelectedPrice) }}</p>
           <p><strong>Количество:</strong> {{ selectedComponents.length }} шт.</p>
-          <p><strong>Средняя цена:</strong> {{ averagePrice }} руб.</p>
+          <p><strong>Средняя цена:</strong> {{ formatPrice(averagePrice) }}</p>
         </div>
         
         <button @click="clearSelection" class="clear-btn">Очистить выбор</button>
@@ -106,7 +110,7 @@
           <h3>✏️ Редактировать компонент</h3>
           <form @submit.prevent="updateComponent" class="form">
             <input v-model="editingComponent.name" placeholder="Название" required>
-            <input v-model.number="editingComponent.price" type="number" placeholder="Цена" required>
+            <input v-model.number="editingComponent.price" type="number" placeholder="Цена ($)" required>
             <select v-model="editingComponent.type" required>
               <option value="cpu">Процессор</option>
               <option value="gpu">Видеокарта</option>
@@ -131,12 +135,12 @@ export default {
     return {
       // Массив компонентов
       components: [
-        { id: 1, name: 'Intel Core i5', price: 18000, type: 'cpu' },
-        { id: 2, name: 'AMD Ryzen 7', price: 25000, type: 'cpu' },
-        { id: 3, name: 'NVIDIA RTX 4060', price: 35000, type: 'gpu' },
-        { id: 4, name: 'AMD RX 7600', price: 30000, type: 'gpu' },
-        { id: 5, name: 'Kingston 16GB', price: 4000, type: 'ram' },
-        { id: 6, name: 'Samsung 1TB SSD', price: 6000, type: 'storage' }
+        { id: 1, name: 'Intel Core i5', price: 180, type: 'cpu' },
+        { id: 2, name: 'AMD Ryzen 7', price: 250, type: 'cpu' },
+        { id: 3, name: 'NVIDIA RTX 4060', price: 350, type: 'gpu' },
+        { id: 4, name: 'AMD RX 7600', price: 300, type: 'gpu' },
+        { id: 5, name: 'Kingston 16GB', price: 40, type: 'ram' },
+        { id: 6, name: 'Samsung 1TB SSD', price: 60, type: 'storage' }
       ],
       // Новый компонент для формы
       newComponent: {
@@ -196,6 +200,12 @@ export default {
     }
   },
   methods: {
+    // Форматирование цены в доллары
+    formatPrice(price) {
+      if (!price) return '$0';
+      return `$${price}`;
+    },
+
     // Добавление компонента в массив
     addComponent() {
       const component = {
@@ -255,7 +265,7 @@ export default {
     
     getTypeName(type) {
       const types = {
-        cpu: 'Процессor',
+        cpu: 'Процессор',
         gpu: 'Видеокарта',
         ram: 'Оперативная память',
         storage: 'Накопитель'
@@ -274,6 +284,17 @@ export default {
 .arrays-view {
   max-width: 800px;
   margin: 0 auto;
+}
+
+.currency-note {
+  background: #e8f4fd;
+  padding: 10px 15px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  border-left: 4px solid #3498db;
+  font-weight: bold;
+  color: #2c3e50;
+  text-align: center;
 }
 
 .demo-section {

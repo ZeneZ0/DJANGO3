@@ -2,6 +2,8 @@
 from rest_framework import generics
 from .models import ComponentType, Manufacturer, Component, PCConfiguration, BuildRequest
 from .serializers import ComponentTypeSerializer, ManufacturerSerializer, ComponentSerializer, PCConfigurationSerializer, BuildRequestSerializer
+from django.contrib.auth.models import User
+from .serializers import UserSerializer
 
 class ComponentTypeList(generics.ListCreateAPIView):
     queryset = ComponentType.objects.all()
@@ -42,3 +44,7 @@ class BuildRequestList(generics.ListCreateAPIView):
 class BuildRequestDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = BuildRequest.objects.all()
     serializer_class = BuildRequestSerializer
+
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer

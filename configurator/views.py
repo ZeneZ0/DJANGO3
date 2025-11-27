@@ -2,6 +2,7 @@
 from django.shortcuts import render
 from .models import PCConfiguration, Component
 
+# HTML views
 def home_page(request):
     recent_configs = PCConfiguration.objects.all().order_by('-created_at')[:5]
     components_count = Component.objects.count()

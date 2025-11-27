@@ -14,6 +14,7 @@
         <router-link to="/manage/components" class="nav-link">Компоненты</router-link>
         <router-link to="/manage/configurations" class="nav-link">Конфигурации</router-link>
         <router-link to="/manage/build-requests" class="nav-link">Запросы на сборку</router-link>
+        <button @click="openAdmin" class="nav-link admin-btn">🔐 Админка</button>
       </div>
     </nav>
     
@@ -25,7 +26,12 @@
 
 <script>
 export default {
-  name: 'App'
+  name: 'App',
+  methods: {
+    openAdmin() {
+      window.open('/admin/', '_blank');
+    }
+  }
 }
 </script>
 
@@ -62,6 +68,7 @@ export default {
   display: flex;
   color: #ffffffff;
   gap: 1rem;
+  align-items: center;
 }
 
 .nav-link {
@@ -75,6 +82,22 @@ export default {
 
 .nav-link:hover,
 .nav-link.router-link-active {
+  background-color: #3381a0;
+  color: white;
+}
+
+.admin-btn {
+  background: none;
+  border: none;
+  color: #ffffffff;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.admin-btn:hover {
   background-color: #3381a0;
   color: white;
 }

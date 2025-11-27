@@ -24,7 +24,7 @@
           </h5>
         </div>
         <div class="card-body">
-          <form @submit.prevent="isEditing ? updateItem() : createItem()">
+          <form @submit.prevent="isEditing ? updateItem() : createItem()" enctype="multipart/form-data">
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">Название компонента *</label>
@@ -69,6 +69,33 @@
                   <label class="form-check-label">В наличии</label>
                 </div>
               </div>
+              
+              <!-- Поле для загрузки изображения компонента согласно методичке -->
+              <div class="col-12">
+                <label class="form-label">Изображение компонента</label>
+                <input 
+                  type="file" 
+                  class="form-control" 
+                  accept="image/*"
+                  @change="handleImageUpload"
+                  ref="imageInput"
+                >
+                <div class="form-text">Поддерживаются форматы: JPG, PNG, GIF</div>
+                
+                <!-- Предпросмотр изображения -->
+                <div v-if="imagePreview" class="mt-3">
+                  <p class="mb-2"><strong>Предпросмотр:</strong></p>
+                  <img :src="imagePreview" class="img-thumbnail" style="max-height: 150px; cursor: pointer" 
+                       @click="openImageModal(imagePreview)" alt="Предпросмотр изображения">
+                </div>
+                
+                <!-- Текущее изображение при редактировании -->
+                <div v-else-if="isEditing && currentImageUrl" class="mt-3">
+                  <p class="mb-2"><strong>Текущее изображение:</strong></p>
+                  <img :src="currentImageUrl" class="img-thumbnail" style="max-height: 150px; cursor: pointer"
+                       @click="openImageModal(currentImageUrl)" alt="Текущее изображение">
+                </div>
+              </div>
             </div>
             <div class="mt-3">
               <button type="submit" class="btn btn-success me-2" :disabled="loading">
@@ -111,7 +138,7 @@
             <table class="table table-striped table-hover">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>Изображение</th>
                   <th>Название</th>
                   <th>Тип</th>
                   <th>Производитель</th>
@@ -122,13 +149,21 @@
               </thead>
               <tbody>
                 <tr v-for="item in items" :key="item.id" :class="{ 'table-warning': !item.in_stock }">
-                  <td>{{ item.id }}</td>
+                  <td>
+                    <img v-if="item.image_url" 
+                         :src="item.image_url" 
+                         class="img-thumbnail" 
+                         style="width: 50px; height: 50px; object-fit: contain; cursor: pointer"
+                         @click="openImageModal(item.image_url)"
+                         :alt="`Изображение ${item.name}`">
+                    <span v-else class="text-muted">—</span>
+                  </td>
                   <td class="fw-bold">{{ item.name }}</td>
                   <td>
-                    <span class="badge bg-primary">{{ getComponentTypeName(item.component_type) }}</span>
+                    <span class="badge bg-primary">{{ item.component_type_name }}</span>
                   </td>
                   <td>
-                    <span class="badge bg-info">{{ getManufacturerName(item.manufacturer) }}</span>
+                    <span class="badge bg-info">{{ item.manufacturer_name }}</span>
                   </td>
                   <td class="fw-bold text-success">${{ item.price }}</td>
                   <td>
@@ -166,8 +201,8 @@
               <div v-if="selectedItem" class="row">
                 <div class="col-md-6">
                   <p><strong>Название:</strong> {{ selectedItem.name }}</p>
-                  <p><strong>Тип:</strong> {{ getComponentTypeName(selectedItem.component_type) }}</p>
-                  <p><strong>Производитель:</strong> {{ getManufacturerName(selectedItem.manufacturer) }}</p>
+                  <p><strong>Тип:</strong> {{ selectedItem.component_type_name }}</p>
+                  <p><strong>Производитель:</strong> {{ selectedItem.manufacturer_name }}</p>
                   <p><strong>Цена:</strong> <span class="text-success fw-bold">${{ selectedItem.price }}</span></p>
                   <p><strong>Наличие:</strong> 
                     <span :class="['badge', selectedItem.in_stock ? 'bg-success' : 'bg-danger']">
@@ -177,6 +212,13 @@
                 </div>
                 <div class="col-md-6">
                   <p><strong>Описание:</strong> {{ selectedItem.description || '—' }}</p>
+                  <div v-if="selectedItem.image_url" class="mb-3">
+                    <strong>Изображение:</strong>
+                    <div class="mt-2">
+                      <img :src="selectedItem.image_url" class="img-thumbnail" style="max-height: 200px; cursor: pointer"
+                           @click="openImageModal(selectedItem.image_url)" alt="Изображение компонента">
+                    </div>
+                  </div>
                   <div v-if="selectedItem.specifications && Object.keys(selectedItem.specifications).length > 0">
                     <strong>Характеристики:</strong>
                     <ul class="mt-2">
@@ -191,6 +233,24 @@
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" @click="selectedItem = null">Закрыть</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно для просмотра изображения согласно методичке -->
+    <div v-if="showImageModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.8)">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">🖼️ Просмотр изображения</h5>
+            <button type="button" class="btn-close" @click="closeImageModal"></button>
+          </div>
+          <div class="modal-body text-center">
+            <img :src="modalImageUrl" class="img-fluid" style="max-height: 70vh" alt="Увеличенное изображение">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeImageModal">Закрыть</button>
           </div>
         </div>
       </div>
@@ -223,6 +283,13 @@ export default {
         specifications: '{}',
         in_stock: true
       },
+      // Переменные для работы с картинками согласно методичке
+      imageFile: null,
+      imagePreview: null,
+      currentImageUrl: null,
+      // Модальное окно для изображений
+      showImageModal: false,
+      modalImageUrl: null,
       notification: {
         message: '',
         type: 'info'
@@ -260,22 +327,56 @@ export default {
       }
     },
 
-    // Создание компонента
+    // Обработка загрузки изображения согласно методичке
+    handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        this.imageFile = file;
+        
+        // Создаем preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.imagePreview = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+
+    // Создание компонента с картинкой
     async createItem() {
       this.loading = true;
       try {
-        let data = { ...this.formData };
+        const formData = new FormData();
+        
+        // Добавляем текстовые данные
+        formData.append('name', this.formData.name);
+        formData.append('component_type', this.formData.component_type);
+        formData.append('manufacturer', this.formData.manufacturer);
+        formData.append('price', this.formData.price);
+        formData.append('description', this.formData.description);
+        formData.append('in_stock', this.formData.in_stock);
         
         // Обработка спецификаций
-        if (data.specifications) {
+        if (this.formData.specifications) {
           try {
-            data.specifications = JSON.parse(data.specifications);
+            const specs = JSON.parse(this.formData.specifications);
+            formData.append('specifications', JSON.stringify(specs));
           } catch (e) {
-            data.specifications = {};
+            formData.append('specifications', '{}');
           }
         }
+        
+        // Добавляем файл, если есть согласно методичке
+        if (this.imageFile) {
+          formData.append('image', this.imageFile);
+        }
 
-        const response = await axios.post(`${API_BASE}/components/`, data);
+        const response = await axios.post(`${API_BASE}/components/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
         this.items.push(response.data);
         this.resetForm();
         this.showNotification('Компонент успешно создан!', 'success');
@@ -291,30 +392,62 @@ export default {
     editItem(item) {
       this.isEditing = true;
       this.editingId = item.id;
-      this.formData = { ...item };
+      this.formData = { 
+        name: item.name,
+        component_type: item.component_type,
+        manufacturer: item.manufacturer,
+        price: item.price,
+        description: item.description || '',
+        in_stock: item.in_stock
+      };
       
       // Преобразование спецификаций в JSON строку
       if (item.specifications) {
         this.formData.specifications = JSON.stringify(item.specifications, null, 2);
+      } else {
+        this.formData.specifications = '{}';
       }
+      
+      this.currentImageUrl = item.image_url;
+      this.imagePreview = null;
+      this.imageFile = null;
     },
 
-    // Обновление компонента
+    // Обновление компонента с картинкой
     async updateItem() {
       this.loading = true;
       try {
-        let data = { ...this.formData };
+        const formData = new FormData();
+        
+        // Добавляем текстовые данные
+        formData.append('name', this.formData.name);
+        formData.append('component_type', this.formData.component_type);
+        formData.append('manufacturer', this.formData.manufacturer);
+        formData.append('price', this.formData.price);
+        formData.append('description', this.formData.description);
+        formData.append('in_stock', this.formData.in_stock);
         
         // Обработка спецификаций
-        if (data.specifications) {
+        if (this.formData.specifications) {
           try {
-            data.specifications = JSON.parse(data.specifications);
+            const specs = JSON.parse(this.formData.specifications);
+            formData.append('specifications', JSON.stringify(specs));
           } catch (e) {
-            data.specifications = {};
+            formData.append('specifications', '{}');
           }
         }
+        
+        // Добавляем файл, если есть новый
+        if (this.imageFile) {
+          formData.append('image', this.imageFile);
+        }
 
-        const response = await axios.put(`${API_BASE}/components/${this.editingId}/`, data);
+        const response = await axios.put(`${API_BASE}/components/${this.editingId}/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
         const index = this.items.findIndex(item => item.id === this.editingId);
         if (index !== -1) {
           this.items.splice(index, 1, response.data);
@@ -350,15 +483,15 @@ export default {
       this.selectedItem = item;
     },
 
-    // Вспомогательные методы
-    getComponentTypeName(typeId) {
-      const type = this.componentTypes.find(t => t.id === typeId);
-      return type ? type.name : `Тип #${typeId}`;
+    // Модальное окно для изображений согласно методичке
+    openImageModal(imageUrl) {
+      this.modalImageUrl = imageUrl;
+      this.showImageModal = true;
     },
 
-    getManufacturerName(manufacturerId) {
-      const manufacturer = this.manufacturers.find(m => m.id === manufacturerId);
-      return manufacturer ? manufacturer.name : `Произв. #${manufacturerId}`;
+    closeImageModal() {
+      this.showImageModal = false;
+      this.modalImageUrl = null;
     },
 
     // Сброс формы
@@ -374,6 +507,12 @@ export default {
         specifications: '{}',
         in_stock: true
       };
+      this.imageFile = null;
+      this.imagePreview = null;
+      this.currentImageUrl = null;
+      if (this.$refs.imageInput) {
+        this.$refs.imageInput.value = '';
+      }
     },
 
     cancelEdit() {

@@ -9,7 +9,6 @@
         <router-link to="/reactive" class="nav-link">Реактивные переменные</router-link>
         <router-link to="/arrays" class="nav-link">Работа с массивами</router-link>
         <router-link to="/backend-data" class="nav-link">Данные с бекенда</router-link>
-        <router-link to="/manage-data" class="nav-link">Управление данными</router-link>
         <router-link to="/manage/component-types" class="nav-link">Типы компонентов</router-link>
         <router-link to="/manage/manufacturers" class="nav-link">Производители</router-link>
         <router-link to="/manage/components" class="nav-link">Компоненты</router-link>

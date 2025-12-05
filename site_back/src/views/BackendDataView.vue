@@ -1,23 +1,23 @@
 <!-- site_back/src/views/BackendDataView.vue -->
 <template>
-  <div class="backend-view">
-    <h1>📡 Данные с бекенда Django</h1>
+  <div class="backend-data">
+    <h1>Данные с сервера</h1>
     
-    <div class="currency-note">
-      💰 Все цены в долларах США ($)
+    <div class="alert alert-info mb-3">
+      Цены в долларах ($)
     </div>
-    
-    <div class="controls">
-      <button @click="loadAllData" class="load-btn" :disabled="loading">
-        {{ loading ? '🔄 Загрузка...' : '📥 Загрузить все данные' }}
+
+    <div class="controls mb-4">
+      <button @click="loadAllData" class="btn btn-primary me-2" :disabled="loading">
+        Загрузить все
       </button>
       
-      <div class="data-selector">
+      <div class="btn-group">
         <button 
           v-for="endpoint in endpoints" 
           :key="endpoint.key"
           @click="loadSpecificData(endpoint.key)"
-          :class="['endpoint-btn', { active: activeEndpoint === endpoint.key }]"
+          :class="['btn btn-outline-secondary', { active: activeEndpoint === endpoint.key }]"
           :disabled="loading"
         >
           {{ endpoint.name }}
@@ -25,128 +25,151 @@
       </div>
     </div>
 
-    <!-- Уведомления -->
-    <div v-if="notification.message" :class="['notification', notification.type]">
-      {{ notification.message }}
-    </div>
-
     <!-- Компоненты -->
-    <div v-if="activeData.componentTypes" class="data-section">
-      <h2>🏷️ Типы компонентов</h2>
-      <div class="items-grid">
-        <div v-for="item in activeData.componentTypes" :key="item.id" class="item-card">
-          <h3>{{ item.name }}</h3>
-          <p>{{ item.description || 'Описание отсутствует' }}</p>
+    <div v-if="activeData.components" class="mb-4">
+      <h3>Компоненты</h3>
+      
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <input v-model="componentSearch" placeholder="Поиск..." class="form-control">
+        </div>
+        <div class="col-md-6">
+          <select v-model="componentTypeFilter" class="form-select">
+            <option value="">Все типы</option>
+            <option v-for="type in componentTypes" :key="type.id" :value="type.id">
+              {{ type.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div 
+          v-for="item in filteredComponents" 
+          :key="item.id" 
+          class="col-md-4 mb-3"
+        >
+          <div class="card h-100" :class="{ 'border-danger': !item.in_stock }">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">
+                Тип: <span class="badge bg-primary">{{ getComponentTypeName(item.component_type) }}</span><br>
+                Производитель: <span class="badge bg-info">{{ getManufacturerName(item.manufacturer) }}</span><br>
+                Цена: <strong class="text-success">${{ item.price }}</strong>
+              </p>
+              <p :class="item.in_stock ? 'text-success' : 'text-danger'">
+                {{ item.in_stock ? 'В наличии' : 'Нет в наличии' }}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Производители -->
-    <div v-if="activeData.manufacturers" class="data-section">
-      <h2>🏭 Производители</h2>
-      <div class="items-grid">
-        <div v-for="item in activeData.manufacturers" :key="item.id" class="item-card">
-          <h3>{{ item.name }}</h3>
-          <p>🌍 {{ item.country }}</p>
-          <p v-if="item.website">🔗 {{ item.website }}</p>
+    <div v-if="activeData.manufacturers" class="mb-4">
+      <h3>Производители</h3>
+      <div class="row">
+        <div v-for="item in activeData.manufacturers" :key="item.id" class="col-md-4 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">
+                Страна: <span class="badge bg-info">{{ item.country }}</span><br>
+                Сайт: <a v-if="item.website" :href="item.website" target="_blank">Перейти</a>
+                <span v-else class="text-muted">-</span>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Компоненты -->
-    <div v-if="activeData.components" class="data-section">
-      <h2>💻 Компоненты</h2>
-      <div class="search-controls">
-        <input v-model="componentSearch" placeholder="Поиск компонентов..." class="search-input">
-        <select v-model="componentTypeFilter" class="filter-select">
-          <option value="">Все типы</option>
-          <option v-for="type in componentTypes" :key="type.id" :value="type.id">
-            {{ type.name }}
-          </option>
-        </select>
-      </div>
-      
-      <div class="items-grid">
-        <div 
-          v-for="item in filteredComponents" 
-          :key="item.id" 
-          class="item-card component-card"
-          :class="{ 'out-of-stock': !item.in_stock }"
-        >
-          <h3>{{ item.name }}</h3>
-          <p>🏷️ {{ getComponentTypeName(item.component_type) }}</p>
-          <p>🏭 {{ getManufacturerName(item.manufacturer) }}</p>
-          <p class="price">{{ formatPrice(item.price) }}</p>
-          <p :class="item.in_stock ? 'in-stock' : 'out-of-stock-text'">
-            {{ item.in_stock ? '✅ В наличии' : '❌ Нет в наличии' }}
-          </p>
-          <div v-if="item.specifications && Object.keys(item.specifications).length > 0" class="specs">
-            <p><strong>Характеристики:</strong></p>
-            <ul>
-              <li v-for="(value, key) in item.specifications" :key="key">
-                {{ key }}: {{ value }}
-              </li>
-            </ul>
+    <!-- Типы компонентов -->
+    <div v-if="activeData.componentTypes" class="mb-4">
+      <h3>Типы компонентов</h3>
+      <div class="row">
+        <div v-for="item in activeData.componentTypes" :key="item.id" class="col-md-4 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">{{ item.description || '-' }}</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Конфигурации -->
-    <div v-if="activeData.configurations" class="data-section">
-      <h2>🖥️ Конфигурации ПК</h2>
-      <div class="items-grid">
-        <div v-for="item in activeData.configurations" :key="item.id" class="item-card config-card">
-          <h3>{{ item.name }}</h3>
-          <p>{{ item.description || 'Без описания' }}</p>
-          <p class="total-price">Итого: {{ formatPrice(item.total_price) }}</p>
-          <div class="config-details">
-            <p><strong>Компоненты:</strong></p>
-            <ul>
-              <li>⚙️ Процессор: {{ getComponentName(item.cpu) }}</li>
-              <li>🎮 Видеокарта: {{ getComponentName(item.gpu) }}</li>
-              <li>🔌 Мат. плата: {{ getComponentName(item.motherboard) }}</li>
-              <li>💾 Память: {{ getComponentName(item.ram) }}</li>
-              <li>💿 Накопитель: {{ getComponentName(item.storage) }}</li>
-              <li>⚡ БП: {{ getComponentName(item.power_supply) }}</li>
-              <li>📦 Корпус: {{ getComponentName(item.case) }}</li>
-            </ul>
+    <div v-if="activeData.configurations" class="mb-4">
+      <h3>Конфигурации ПК</h3>
+      <div class="row">
+        <div v-for="item in activeData.configurations" :key="item.id" class="col-md-6 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">{{ item.description || '-' }}</p>
+              <p class="fw-bold text-success">Общая стоимость: ${{ item.total_price }}</p>
+              <div class="small">
+                <p class="mb-1"><strong>Компоненты:</strong></p>
+                <ul class="mb-0">
+                  <li>Процессор: {{ getComponentName(item.cpu) }}</li>
+                  <li>Видеокарта: {{ getComponentName(item.gpu) }}</li>
+                  <li>Материнская плата: {{ getComponentName(item.motherboard) }}</li>
+                  <li>Память: {{ getComponentName(item.ram) }}</li>
+                  <li>Накопитель: {{ getComponentName(item.storage) }}</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Статистика -->
-    <div v-if="showStats" class="stats-section">
-      <h2>📊 Статистика</h2>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <h3>🏷️ Типов компонентов</h3>
-          <p class="stat-number">{{ stats.componentTypesCount }}</p>
+    <div v-if="showStats" class="mb-4">
+      <h3>Статистика</h3>
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5>Типы</h5>
+              <h2>{{ stats.componentTypesCount }}</h2>
+            </div>
+          </div>
         </div>
-        <div class="stat-card">
-          <h3>🏭 Производителей</h3>
-          <p class="stat-number">{{ stats.manufacturersCount }}</p>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5>Производители</h5>
+              <h2>{{ stats.manufacturersCount }}</h2>
+            </div>
+          </div>
         </div>
-        <div class="stat-card">
-          <h3>💻 Компонентов</h3>
-          <p class="stat-number">{{ stats.componentsCount }}</p>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5>Компоненты</h5>
+              <h2>{{ stats.componentsCount }}</h2>
+            </div>
+          </div>
         </div>
-        <div class="stat-card">
-          <h3>🖥️ Конфигураций</h3>
-          <p class="stat-number">{{ stats.configurationsCount }}</p>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5>Конфигурации</h5>
+              <h2>{{ stats.configurationsCount }}</h2>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Ошибка загрузки -->
-    <div v-if="error" class="error-section">
-      <h2>❌ Ошибка загрузки данных</h2>
+    <!-- Ошибка -->
+    <div v-if="error" class="alert alert-danger">
+      <h5>Ошибка загрузки данных</h5>
       <p>{{ error }}</p>
-      <p class="help-text">
-        Убедитесь, что Django сервер запущен на порту 8000:
-        <code>python manage.py runserver</code>
-      </p>
+      <p class="mb-0">Убедитесь, что сервер Django запущен</p>
     </div>
   </div>
 </template>
@@ -154,38 +177,24 @@
 <script>
 import axios from 'axios';
 
-const API_BASE = '/api';
-
 export default {
   name: 'BackendDataView',
   data() {
     return {
-      // Все данные
       allData: {
         componentTypes: [],
         manufacturers: [],
         components: [],
         configurations: []
       },
-      // Активные данные для отображения
       activeData: {},
-      // Состояние загрузки
       loading: false,
-      // Активный endpoint
       activeEndpoint: null,
-      // Ошибки
       error: null,
-      // Уведомления
-      notification: {
-        message: '',
-        type: ''
-      },
-      // Поиск и фильтры
       componentSearch: '',
       componentTypeFilter: '',
-      // Endpoints
       endpoints: [
-        { key: 'all', name: 'Все данные' },
+        { key: 'all', name: 'Все' },
         { key: 'componentTypes', name: 'Типы' },
         { key: 'manufacturers', name: 'Производители' },
         { key: 'components', name: 'Компоненты' },
@@ -194,28 +203,24 @@ export default {
     }
   },
   computed: {
-    // Фильтрованные компоненты
     filteredComponents() {
       let components = this.allData.components;
       
-      // Поиск по названию
       if (this.componentSearch) {
-        components = components.filter(component =>
-          component.name.toLowerCase().includes(this.componentSearch.toLowerCase())
+        components = components.filter(c =>
+          c.name.toLowerCase().includes(this.componentSearch.toLowerCase())
         );
       }
       
-      // Фильтрация по типу
       if (this.componentTypeFilter) {
-        components = components.filter(component =>
-          component.component_type == this.componentTypeFilter
+        components = components.filter(c =>
+          c.component_type == this.componentTypeFilter
         );
       }
       
       return components;
     },
     
-    // Статистика
     showStats() {
       return this.activeEndpoint === 'all';
     },
@@ -234,33 +239,21 @@ export default {
     }
   },
   methods: {
-    // Форматирование цены в доллары
-    formatPrice(price) {
-      if (!price) return '$0';
-      
-      // Просто добавляем знак доллара к существующей цене
-      return `$${price}`;
-    },
-
-    // Загрузка всех данных
     async loadAllData() {
       this.loading = true;
       this.error = null;
       this.activeEndpoint = 'all';
       
       try {
-        const endpoints = [
-          'component-types',
-          'manufacturers', 
-          'components',
-          'configurations'
+        const urls = [
+          '/api/component-types/',
+          '/api/manufacturers/', 
+          '/api/components/',
+          '/api/configurations/'
         ];
         
-        const requests = endpoints.map(endpoint => 
-          axios.get(`${API_BASE}/${endpoint}/`).catch(error => {
-            console.error(`Ошибка загрузки ${endpoint}:`, error);
-            return { data: [] };
-          })
+        const requests = urls.map(url => 
+          axios.get(url).catch(() => ({ data: [] }))
         );
         
         const responses = await Promise.all(requests);
@@ -273,18 +266,15 @@ export default {
         };
         
         this.activeData = { ...this.allData };
-        this.showNotification('Данные успешно загружены!', 'success');
         
       } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
-        this.error = 'Не удалось загрузить данные с сервера';
-        this.showNotification('Ошибка загрузки данных', 'error');
+        console.error('Ошибка загрузки:', error);
+        this.error = 'Не удалось загрузить данные';
       } finally {
         this.loading = false;
       }
     },
     
-    // Загрузка конкретных данных
     async loadSpecificData(endpointKey) {
       if (this.loading) return;
       
@@ -298,49 +288,35 @@ export default {
         
         switch (endpointKey) {
           case 'componentTypes':
-            url = 'component-types';
+            url = '/api/component-types/';
             dataKey = 'componentTypes';
             break;
           case 'manufacturers':
-            url = 'manufacturers';
+            url = '/api/manufacturers/';
             dataKey = 'manufacturers';
             break;
           case 'components':
-            url = 'components';
+            url = '/api/components/';
             dataKey = 'components';
             break;
           case 'configurations':
-            url = 'configurations';
+            url = '/api/configurations/';
             dataKey = 'configurations';
             break;
           default:
             return;
         }
         
-        const response = await axios.get(`${API_BASE}/${url}/`);
+        const response = await axios.get(url);
         this.allData[dataKey] = response.data;
         this.activeData[dataKey] = response.data;
         
-        this.showNotification(`Данные ${this.getEndpointName(endpointKey)} загружены`, 'success');
-        
       } catch (error) {
         console.error(`Ошибка загрузки ${endpointKey}:`, error);
-        this.error = `Не удалось загрузить ${this.getEndpointName(endpointKey)}`;
-        this.showNotification(`Ошибка загрузки ${this.getEndpointName(endpointKey)}`, 'error');
+        this.error = `Не удалось загрузить ${endpointKey}`;
       } finally {
         this.loading = false;
       }
-    },
-    
-    // Вспомогательные методы
-    getEndpointName(key) {
-      const names = {
-        componentTypes: 'типов компонентов',
-        manufacturers: 'производителей',
-        components: 'компонентов',
-        configurations: 'конфигураций'
-      };
-      return names[key] || key;
     },
     
     getComponentTypeName(typeId) {
@@ -356,271 +332,52 @@ export default {
     getComponentName(componentId) {
       const component = this.allData.components.find(c => c.id === componentId);
       return component ? component.name : `Компонент #${componentId}`;
-    },
-    
-    showNotification(message, type = 'info') {
-      this.notification = { message, type };
-      setTimeout(() => {
-        this.notification.message = '';
-      }, 4000);
     }
   },
   mounted() {
-    // Автоматически загружаем данные при монтировании
     this.loadAllData();
   }
 }
 </script>
 
 <style scoped>
-.backend-view {
-  max-width: 1200px;
-  margin: 0 auto;
+.backend-data {
   padding: 20px;
-}
-
-.currency-note {
-  background: #e8f4fd;
-  padding: 10px 15px;
-  border-radius: 5px;
-  margin-bottom: 15px;
-  border-left: 4px solid #3498db;
-  font-weight: bold;
-  color: #2c3e50;
-  text-align: center;
 }
 
 .controls {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.load-btn {
-  background: #3498db;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  margin-bottom: 15px;
-}
-
-.load-btn:disabled {
-  background: #bdc3c7;
-  cursor: not-allowed;
-}
-
-.data-selector {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.endpoint-btn {
-  background: #ecf0f1;
-  border: 2px solid #bdc3c7;
-  padding: 8px 16px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.endpoint-btn:hover {
-  background: #d5dbdb;
-}
-
-.endpoint-btn.active {
-  background: #3498db;
-  color: white;
-  border-color: #3498db;
-}
-
-.endpoint-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.data-section {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-top: 15px;
-}
-
-.item-card {
-  background: #f8f9fa;
   padding: 15px;
+  background: #f8f9fa;
   border-radius: 8px;
-  border-left: 4px solid #3498db;
 }
 
-.component-card.out-of-stock {
-  opacity: 0.7;
-  border-left-color: #e74c3c;
-}
-
-.config-card {
-  border-left-color: #9b59b6;
-}
-
-.item-card h3 {
-  margin: 0 0 10px 0;
-  color: #2c3e50;
-}
-
-.item-card p {
-  margin: 5px 0;
-  color: #7f8c8d;
-}
-
-.price {
-  color: #27ae60 !important;
-  font-weight: bold;
-  font-size: 1.1em;
-}
-
-.total-price {
-  color: #e67e22 !important;
-  font-weight: bold;
-  font-size: 1.2em;
-}
-
-.in-stock {
-  color: #27ae60 !important;
-  font-weight: bold;
-}
-
-.out-of-stock-text {
-  color: #e74c3c !important;
-  font-weight: bold;
-}
-
-.specs {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #ddd;
-}
-
-.specs ul {
-  margin: 5px 0;
-  padding-left: 20px;
-}
-
-.specs li {
-  color: #7f8c8d;
-  font-size: 0.9em;
-}
-
-.config-details ul {
-  margin: 10px 0;
-  padding-left: 20px;
-}
-
-.config-details li {
-  color: #7f8c8d;
-  margin: 3px 0;
-}
-
-.search-controls {
+.btn-group {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 5px;
 }
 
-.search-input, .filter-select {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+.btn-group .btn {
   flex: 1;
 }
 
-.stats-section {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.card {
+  transition: transform 0.2s;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+.card:hover {
+  transform: translateY(-2px);
 }
 
-.stat-card {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  text-align: center;
-  border-top: 4px solid #3498db;
+.card.border-danger {
+  border-width: 2px;
 }
 
-.stat-card h3 {
-  margin: 0 0 10px 0;
-  color: #2c3e50;
-  font-size: 1em;
+.small ul {
+  margin-bottom: 0;
+  padding-left: 20px;
 }
 
-.stat-number {
-  font-size: 2em;
-  font-weight: bold;
-  color: #3498db;
-  margin: 0;
-}
-
-.error-section {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #f5c6cb;
-}
-
-.help-text {
-  margin-top: 10px;
-  font-size: 0.9em;
-}
-
-.help-text code {
-  background: #f1f1f1;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 15px 20px;
-  border-radius: 5px;
-  color: white;
-  font-weight: bold;
-  z-index: 1000;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.notification.success {
-  background: #27ae60;
-}
-
-.notification.error {
-  background: #e74c3c;
-}
-
-.notification.info {
-  background: #3498db;
+.small li {
+  margin-bottom: 2px;
 }
 </style>

@@ -1,24 +1,22 @@
 <!-- site_back/src/App.vue -->
 <template>
   <div id="app">
-    <nav class="navbar">
-      <div class="nav-brand">🎮 Конфигуратор ПК</div>
-      <div class="nav-links">
+    <header class="header">
+      <div class="header-title">Конфигуратор ПК</div>
+      <nav class="nav">
         <router-link to="/" class="nav-link">Главная</router-link>
         <router-link to="/about" class="nav-link">О проекте</router-link>
-        <router-link to="/reactive" class="nav-link">Реактивные переменные</router-link>
-        <router-link to="/arrays" class="nav-link">Работа с массивами</router-link>
-        <router-link to="/backend-data" class="nav-link">Данные с бекенда</router-link>
-        <router-link to="/manage/component-types" class="nav-link">Типы компонентов</router-link>
-        <router-link to="/manage/manufacturers" class="nav-link">Производители</router-link>
-        <router-link to="/manage/components" class="nav-link">Компоненты</router-link>
-        <router-link to="/manage/configurations" class="nav-link">Конфигурации</router-link>
-        <router-link to="/manage/build-requests" class="nav-link">Запросы на сборку</router-link>
-        <button @click="openAdmin" class="nav-link admin-btn">🔐 Админка</button>
-      </div>
-    </nav>
+        <router-link to="/reactive" class="nav-link">Реактивность</router-link>
+        <router-link to="/arrays" class="nav-link">Массивы</router-link>
+        <router-link to="/data" class="nav-link">Данные</router-link>
+        <router-link to="/components" class="nav-link">Компоненты</router-link>
+        <router-link to="/configs" class="nav-link">Конфигурации</router-link>
+        <router-link to="/requests" class="nav-link">Запросы</router-link>
+        <button @click="openAdmin" class="nav-link admin-btn">Админка</button>
+      </nav>
+    </header>
     
-    <main class="main-content">
+    <main class="content">
       <router-view/>
     </main>
   </div>
@@ -36,75 +34,59 @@ export default {
 </script>
 
 <style>
-* {
+body {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.navbar {
-  background: #2b4a68ff;
-  padding: 1rem 2rem;
+.header {
+  background: #2c3e50;
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid #ffffffff;
+  color: white;
 }
 
-.nav-brand {
-  color: #ffffffff;
+.header-title {
   font-size: 1.5rem;
   font-weight: bold;
 }
 
-.nav-links {
+.nav {
   display: flex;
-  color: #ffffffff;
-  gap: 1rem;
-  align-items: center;
+  gap: 10px;
 }
 
 .nav-link {
-  color: #ffffffff;
+  color: white;
   text-decoration: none;
-  padding: 0.5rem 1rem;
+  padding: 8px 12px;
   border-radius: 4px;
-  transition: all 0.3s;
-  font-weight: 500;
+  font-size: 14px;
 }
 
-.nav-link:hover,
+.nav-link:hover {
+  background: #3498db;
+}
+
 .nav-link.router-link-active {
-  background-color: #3381a0;
-  color: white;
+  background: #2980b9;
 }
 
 .admin-btn {
-  background: none;
+  background: #e74c3c;
   border: none;
-  color: #ffffffff;
   cursor: pointer;
-  font: inherit;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.3s;
 }
 
 .admin-btn:hover {
-  background-color: #3381a0;
-  color: white;
+  background: #c0392b;
 }
 
-.main-content {
-  padding: 2rem;
-  min-height: calc(100vh - 80px);
-  background: #f8f9fa;
+.content {
+  padding: 20px;
+  background: #ecf0f1;
+  min-height: calc(100vh - 70px);
 }
 </style>

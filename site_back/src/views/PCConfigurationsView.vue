@@ -1,164 +1,135 @@
 <!-- site_back/src/views/PCConfigurationsView.vue -->
 <template>
-  <div class="configurations-view">
-    <div class="container mt-4">
-      <h1 class="text-center mb-4">🖥️ Управление конфигурациями ПК</h1>
-      
-      <div class="currency-note alert alert-info">
-        💰 Все цены в долларах США ($)
+  <div class="container mt-4">
+    <h1 class="mb-4">Управление конфигурациями ПК</h1>
+    
+    <div class="alert alert-info mb-3">
+      Цены в долларах ($)
+    </div>
+
+    <!-- Форма -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Добавить' }} конфигурацию</h5>
       </div>
+      <div class="card-body">
+        <form @submit.prevent="saveConfig">
+          <div class="mb-3">
+            <label class="form-label">Название:</label>
+            <input v-model="form.name" type="text" class="form-control" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Описание:</label>
+            <textarea v-model="form.description" class="form-control" rows="2"></textarea>
+          </div>
 
-      <!-- Уведомления -->
-      <div v-if="notification.message" 
-           :class="['alert', `alert-${notification.type}`, 'alert-dismissible', 'fade', 'show']" 
-           role="alert">
-        {{ notification.message }}
-        <button type="button" class="btn-close" @click="clearNotification"></button>
-      </div>
-
-      <!-- Форма добавления/редактирования -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            {{ isEditing ? '✏️ Редактирование конфигурации' : '➕ Добавить новую конфигурацию' }}
-          </h5>
-        </div>
-        <div class="card-body">
-          <form @submit.prevent="isEditing ? updateItem() : createItem()">
-            <div class="row g-3">
-              <div class="col-md-8">
-                <label class="form-label">Название конфигурации *</label>
-                <input v-model="formData.name" type="text" class="form-control" required>
-              </div>
-              <div class="col-12">
-                <label class="form-label">Описание</label>
-                <textarea v-model="formData.description" class="form-control" rows="2" 
-                         placeholder="Описание конфигурации..."></textarea>
-              </div>
-              
-              <!-- Выбор компонентов -->
-              <div class="col-md-6" v-for="componentType in componentTypes" :key="componentType.id">
-                <label class="form-label">{{ componentType.name }} *</label>
-                <select v-model="formData[getComponentField(componentType.name)]" class="form-select" required>
-                  <option value="">Выберите {{ componentType.name.toLowerCase() }}</option>
-                  <option v-for="component in getComponentsByType(componentType.id)" 
-                         :key="component.id" :value="component.id">
-                    {{ component.name }} - ${{ component.price }}
-                  </option>
-                </select>
-              </div>
+          <h5>Выбор компонентов</h5>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3" v-for="type in componentTypes" :key="type.id">
+              <label class="form-label">{{ type.name }}:</label>
+              <select v-model="form[getFieldName(type.name)]" class="form-select" required>
+                <option value="">Выберите</option>
+                <option 
+                  v-for="comp in getComponents(type.id)" 
+                  :key="comp.id" 
+                  :value="comp.id"
+                >
+                  {{ comp.name }} (${{ comp.price }})
+                </option>
+              </select>
             </div>
-            
-            <div class="mt-4 p-3 bg-light rounded">
-              <h6>💰 Итоговая стоимость: <span class="text-success fw-bold">{{ calculateTotalPrice() }}</span></h6>
-            </div>
+          </div>
 
-            <div class="mt-3">
-              <button type="submit" class="btn btn-success me-2" :disabled="loading || !isFormValid()">
-                <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-                {{ isEditing ? '💾 Сохранить' : '➕ Добавить' }}
-              </button>
-              <button v-if="isEditing" type="button" class="btn btn-secondary" @click="cancelEdit">
-                ❌ Отмена
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+          <div class="alert alert-light mb-3">
+            <strong>Общая стоимость: ${{ calculateTotal() }}</strong>
+          </div>
 
-      <!-- Список конфигураций -->
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="card-title mb-0">📋 Список конфигураций ({{ items.length }})</h5>
           <div>
-            <button class="btn btn-outline-primary btn-sm me-2" @click="loadData">
-              🔄 Обновить
+            <button type="submit" class="btn btn-success" :disabled="loading">
+              {{ isEditing ? 'Сохранить' : 'Добавить' }}
             </button>
-            <button class="btn btn-outline-info btn-sm" @click="loadReferenceData">
-              📥 Загрузить компоненты
+            <button type="button" v-if="isEditing" @click="cancelEdit" class="btn btn-secondary ms-2">
+              Отмена
             </button>
           </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Список конфигураций -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <h5 class="mb-0">Список конфигураций ({{ configs.length }})</h5>
+        <button @click="loadData" class="btn btn-outline-primary btn-sm">Обновить</button>
+      </div>
+      
+      <div class="card-body">
+        <div v-if="loading" class="text-center py-3">
+          <div class="spinner-border text-primary"></div>
         </div>
-        <div class="card-body">
-          <div v-if="loading" class="text-center">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Загрузка...</span>
-            </div>
-          </div>
-
-          <div v-else-if="items.length === 0" class="text-center text-muted py-4">
-            😔 Конфигурации не найдены
-          </div>
-
-          <div v-else class="table-responsive">
-            <table class="table table-striped table-hover">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Название</th>
-                  <th>Описание</th>
-                  <th>Общая стоимость</th>
-                  <th>Дата создания</th>
-                  <th>Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in items" :key="item.id">
-                  <td>{{ item.id }}</td>
-                  <td class="fw-bold">{{ item.name }}</td>
-                  <td>{{ item.description || '—' }}</td>
-                  <td class="fw-bold text-success">${{ item.total_price }}</td>
-                  <td>{{ formatDate(item.created_at) }}</td>
-                  <td>
-                    <button class="btn btn-warning btn-sm me-1" @click="editItem(item)" title="Редактировать">
-                      ✏️
-                    </button>
-                    <button class="btn btn-info btn-sm me-1" @click="showDetails(item)" title="Подробности">
-                      🔍
-                    </button>
-                    <button class="btn btn-danger btn-sm" @click="deleteItem(item.id)" title="Удалить">
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        
+        <div v-else-if="configs.length === 0" class="text-center py-4 text-muted">
+          Конфигураций нет
+        </div>
+        
+        <div v-else class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Стоимость</th>
+                <th>Дата</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="config in configs" :key="config.id">
+                <td>{{ config.id }}</td>
+                <td><strong>{{ config.name }}</strong></td>
+                <td class="text-success"><strong>${{ config.total_price }}</strong></td>
+                <td>{{ formatDate(config.created_at) }}</td>
+                <td>
+                  <button @click="editConfig(config)" class="btn btn-warning btn-sm me-1">Изменить</button>
+                  <button @click="showDetails(config)" class="btn btn-info btn-sm me-1">Детали</button>
+                  <button @click="deleteConfig(config.id)" class="btn btn-danger btn-sm">Удалить</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
+    </div>
 
-      <!-- Модальное окно с деталями -->
-      <div v-if="selectedItem" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5)">
-        <div class="modal-dialog modal-lg">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">🔍 Детали конфигурации</h5>
-              <button type="button" class="btn-close" @click="selectedItem = null"></button>
+    <!-- Модальное окно деталей -->
+    <div v-if="selectedConfig" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Детали конфигурации</h5>
+            <button type="button" class="btn-close" @click="selectedConfig = null"></button>
+          </div>
+          
+          <div class="modal-body">
+            <p><strong>Название:</strong> {{ selectedConfig.name }}</p>
+            <p><strong>Описание:</strong> {{ selectedConfig.description || '-' }}</p>
+            <p><strong>Общая стоимость:</strong> ${{ selectedConfig.total_price }}</p>
+            
+            <div class="mt-3">
+              <h6>Компоненты:</h6>
+              <ul class="list-group">
+                <li class="list-group-item" v-for="type in componentTypes" :key="type.id">
+                  <strong>{{ type.name }}:</strong> 
+                  {{ getComponentName(selectedConfig[getFieldName(type.name)]) }}
+                </li>
+              </ul>
             </div>
-            <div class="modal-body">
-              <div v-if="selectedItem" class="row">
-                <div class="col-md-6">
-                  <p><strong>Название:</strong> {{ selectedItem.name }}</p>
-                  <p><strong>Описание:</strong> {{ selectedItem.description || '—' }}</p>
-                  <p><strong>Общая стоимость:</strong> 
-                    <span class="text-success fw-bold">${{ selectedItem.total_price }}</span>
-                  </p>
-                  <p><strong>Дата создания:</strong> {{ formatDate(selectedItem.created_at) }}</p>
-                </div>
-                <div class="col-md-6">
-                  <strong>Компоненты:</strong>
-                  <ul class="mt-2">
-                    <li v-for="componentType in componentTypes" :key="componentType.id">
-                      <strong>{{ componentType.name }}:</strong> 
-                      {{ getComponentName(selectedItem[getComponentField(componentType.name)]) }}
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" @click="selectedItem = null">Закрыть</button>
-            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="selectedConfig = null">Закрыть</button>
           </div>
         </div>
       </div>
@@ -169,20 +140,18 @@
 <script>
 import axios from 'axios';
 
-const API_BASE = '/api';
-
 export default {
   name: 'PCConfigurationsView',
   data() {
     return {
-      items: [],
+      configs: [],
       components: [],
       componentTypes: [],
       loading: false,
       isEditing: false,
-      editingId: null,
-      selectedItem: null,
-      formData: {
+      editId: null,
+      selectedConfig: null,
+      form: {
         name: '',
         description: '',
         cpu: '',
@@ -192,110 +161,37 @@ export default {
         storage: '',
         power_supply: '',
         case: ''
-      },
-      notification: {
-        message: '',
-        type: 'info'
       }
     }
   },
   methods: {
-    // Загрузка данных
     async loadData() {
       this.loading = true;
       try {
-        const response = await axios.get(`${API_BASE}/configurations/`);
-        this.items = response.data;
+        const response = await axios.get('/api/configurations/');
+        this.configs = response.data;
       } catch (error) {
-        console.error('Ошибка загрузки конфигураций:', error);
-        this.showNotification('Ошибка загрузки данных', 'danger');
-      } finally {
-        this.loading = false;
+        console.error('Ошибка загрузки:', error);
+        alert('Ошибка загрузки данных');
       }
+      this.loading = false;
     },
 
-    // Загрузка справочников
-    async loadReferenceData() {
+    async loadComponents() {
       try {
-        const [componentsResponse, typesResponse] = await Promise.all([
-          axios.get(`${API_BASE}/components/`),
-          axios.get(`${API_BASE}/component-types/`)
+        const [comps, types] = await Promise.all([
+          axios.get('/api/components/'),
+          axios.get('/api/component-types/')
         ]);
-        this.components = componentsResponse.data;
-        this.componentTypes = typesResponse.data;
-        this.showNotification('Компоненты загружены!', 'success');
+        this.components = comps.data;
+        this.componentTypes = types.data;
       } catch (error) {
-        console.error('Ошибка загрузки справочников:', error);
-        this.showNotification('Ошибка загрузки компонентов', 'danger');
+        console.error('Ошибка загрузки компонентов:', error);
       }
     },
 
-    // Создание конфигурации
-    async createItem() {
-      this.loading = true;
-      try {
-        const response = await axios.post(`${API_BASE}/configurations/`, this.formData);
-        this.items.push(response.data);
-        this.resetForm();
-        this.showNotification('Конфигурация успешно создана!', 'success');
-      } catch (error) {
-        console.error('Ошибка создания конфигурации:', error);
-        this.showNotification('Ошибка создания конфигурации', 'danger');
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    // Редактирование конфигурации
-    editItem(item) {
-      this.isEditing = true;
-      this.editingId = item.id;
-      this.formData = { ...item };
-    },
-
-    // Обновление конфигурации
-    async updateItem() {
-      this.loading = true;
-      try {
-        const response = await axios.put(`${API_BASE}/configurations/${this.editingId}/`, this.formData);
-        const index = this.items.findIndex(item => item.id === this.editingId);
-        if (index !== -1) {
-          this.items.splice(index, 1, response.data);
-        }
-        this.cancelEdit();
-        this.showNotification('Конфигурация успешно обновлена!', 'success');
-      } catch (error) {
-        console.error('Ошибка обновления конфигурации:', error);
-        this.showNotification('Ошибка обновления конфигурации', 'danger');
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    // Удаление конфигурации
-    async deleteItem(id) {
-      if (!confirm('Вы уверены, что хотите удалить эту конфигурацию?')) {
-        return;
-      }
-
-      try {
-        await axios.delete(`${API_BASE}/configurations/${id}/`);
-        this.items = this.items.filter(item => item.id !== id);
-        this.showNotification('Конфигурация успешно удалена!', 'success');
-      } catch (error) {
-        console.error('Ошибка удаления конфигурации:', error);
-        this.showNotification('Ошибка удаления конфигурации', 'danger');
-      }
-    },
-
-    // Показать детали
-    showDetails(item) {
-      this.selectedItem = item;
-    },
-
-    // Вспомогательные методы
-    getComponentField(typeName) {
-      const fields = {
+    getFieldName(typeName) {
+      const map = {
         'Процессор': 'cpu',
         'Видеокарта': 'gpu',
         'Материнская плата': 'motherboard',
@@ -304,46 +200,85 @@ export default {
         'Блок питания': 'power_supply',
         'Корпус': 'case'
       };
-      return fields[typeName] || typeName.toLowerCase();
+      return map[typeName] || '';
     },
 
-    getComponentsByType(typeId) {
-      return this.components.filter(component => component.component_type === typeId);
+    getComponents(typeId) {
+      return this.components.filter(c => c.component_type === typeId);
     },
 
-    getComponentName(componentId) {
-      const component = this.components.find(c => c.id === componentId);
-      return component ? component.name : `Компонент #${componentId}`;
+    getComponentName(compId) {
+      const comp = this.components.find(c => c.id === compId);
+      return comp ? comp.name : 'Неизвестно';
     },
 
-    calculateTotalPrice() {
+    calculateTotal() {
       let total = 0;
-      for (const field in this.formData) {
-        if (field !== 'name' && field !== 'description' && this.formData[field]) {
-          const component = this.components.find(c => c.id === this.formData[field]);
-          if (component) {
-            total += parseFloat(component.price);
-          }
+      const fields = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'power_supply', 'case'];
+      
+      fields.forEach(field => {
+        if (this.form[field]) {
+          const comp = this.components.find(c => c.id === this.form[field]);
+          if (comp) total += parseFloat(comp.price);
         }
+      });
+      
+      return total;
+    },
+
+    async saveConfig() {
+      this.loading = true;
+      try {
+        if (this.isEditing) {
+          await axios.put(`/api/configurations/${this.editId}/`, this.form);
+        } else {
+          await axios.post('/api/configurations/', this.form);
+        }
+        
+        await this.loadData();
+        this.resetForm();
+        alert('Сохранено успешно');
+      } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        alert('Ошибка сохранения');
       }
-      return `$${total}`;
+      this.loading = false;
     },
 
-    isFormValid() {
-      // Проверяем, что все компоненты выбраны
-      const requiredFields = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'power_supply', 'case'];
-      return requiredFields.every(field => this.formData[field]) && this.formData.name;
+    editConfig(config) {
+      this.isEditing = true;
+      this.editId = config.id;
+      this.form = { ...config };
     },
 
-    formatDate(dateString) {
-      return new Date(dateString).toLocaleDateString('ru-RU');
+    cancelEdit() {
+      this.resetForm();
     },
 
-    // Сброс формы
+    async deleteConfig(id) {
+      if (!confirm('Удалить конфигурацию?')) return;
+      
+      try {
+        await axios.delete(`/api/configurations/${id}/`);
+        this.configs = this.configs.filter(c => c.id !== id);
+      } catch (error) {
+        console.error('Ошибка удаления:', error);
+        alert('Ошибка удаления');
+      }
+    },
+
+    showDetails(config) {
+      this.selectedConfig = config;
+    },
+
+    formatDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString();
+    },
+
     resetForm() {
       this.isEditing = false;
-      this.editingId = null;
-      this.formData = {
+      this.editId = null;
+      this.form = {
         name: '',
         description: '',
         cpu: '',
@@ -354,43 +289,22 @@ export default {
         power_supply: '',
         case: ''
       };
-    },
-
-    cancelEdit() {
-      this.resetForm();
-    },
-
-    // Уведомления
-    showNotification(message, type = 'info') {
-      this.notification = { message, type };
-      setTimeout(() => {
-        this.clearNotification();
-      }, 5000);
-    },
-
-    clearNotification() {
-      this.notification.message = '';
     }
   },
   mounted() {
     this.loadData();
-    this.loadReferenceData();
+    this.loadComponents();
   }
 }
 </script>
 
 <style scoped>
-.configurations-view {
-  min-height: 100vh;
-  background: #f8f9fa;
+.table-responsive {
+  overflow-x: auto;
 }
 
-.currency-note {
-  text-align: center;
-  font-weight: bold;
-}
-
-.modal {
-  background: rgba(0,0,0,0.5);
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
 }
 </style>

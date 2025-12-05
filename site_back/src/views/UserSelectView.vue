@@ -1,41 +1,28 @@
 <!-- site_back/src/views/UserSelectView.vue -->
 <template>
-  <div class="user-select-view">
-    <div class="container mt-5">
-      <div class="row justify-content-center">
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header text-center">
-              <h4 class="card-title mb-0">👥 Выбор пользователя</h4>
-            </div>
-            <div class="card-body">
-              <div class="list-group">
-                <button 
-                  v-for="user in users" 
-                  :key="user.id"
-                  class="list-group-item list-group-item-action user-item"
-                  @click="selectUser(user)"
-                >
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <h6 class="mb-1">{{ user.username }}</h6>
-                      <p class="mb-1 text-muted">{{ user.description }}</p>
-                    </div>
-                    <span :class="user.badgeClass">{{ user.role }}</span>
-                  </div>
-                </button>
-              </div>
-
-              <div class="mt-4">
-                <div class="alert alert-info">
-                  <h6>🔑 Пароли для входа:</h6>
-                  <p class="mb-1"><strong>ZeneZ:</strong> admin123</p>
-                  <p class="mb-0"><strong>vlad:</strong> vlad123</p>
-                </div>
-              </div>
-            </div>
+  <div class="login-page">
+    <div class="login-box">
+      <h2>Выберите пользователя</h2>
+      
+      <div class="user-list">
+        <div 
+          v-for="user in users" 
+          :key="user.id"
+          class="user-item"
+          @click="login(user)"
+        >
+          <div class="user-info">
+            <div class="user-name">{{ user.name }}</div>
+            <div class="user-role">{{ user.role }}</div>
           </div>
+          <div class="user-desc">{{ user.desc }}</div>
         </div>
+      </div>
+
+      <div class="password-info">
+        <p><strong>Пароли:</strong></p>
+        <p>ZeneZ: admin123</p>
+        <p>vlad: vlad123</p>
       </div>
     </div>
   </div>
@@ -51,82 +38,127 @@ export default {
       users: [
         {
           id: 1,
-          username: 'ZeneZ',
+          name: 'ZeneZ',
           password: 'admin123',
           role: 'Администратор',
-          description: 'Полный доступ ко всем функциям системы',
-          badgeClass: 'badge bg-warning'
+          desc: 'Полный доступ'
         },
         {
           id: 2,
-          username: 'vlad',
+          name: 'vlad',
           password: 'vlad123',
           role: 'Покупатель',
-          description: 'Просмотр каталогов и создание заявок',
-          badgeClass: 'badge bg-info'
+          desc: 'Просмотр и заявки'
         }
       ]
     }
   },
   methods: {
-    async selectUser(user) {
+    async login(user) {
       try {
-        // Сохраняем выбранного пользователя
-        localStorage.setItem('currentUser', JSON.stringify(user));
+        // Сохраняем пользователя
+        localStorage.setItem('user', JSON.stringify(user));
         
-        // Создаем Basic Auth заголовок
-        const credentials = btoa(`${user.username}:${user.password}`);
-        localStorage.setItem('authCredentials', credentials);
+        // Создаем заголовок авторизации
+        const auth = btoa(`${user.name}:${user.password}`);
+        localStorage.setItem('auth', auth);
 
-        // Проверяем аутентификацию
-        const response = await axios.get('/api/components/', {
+        // Проверяем доступ
+        await axios.get('/api/components/', {
           headers: {
-            'Authorization': `Basic ${credentials}`
+            'Authorization': `Basic ${auth}`
           }
         });
 
-        // Перенаправляем на главную
+        // Переходим на главную
         this.$router.push('/');
         
       } catch (error) {
-        console.error('Ошибка входа:', error);
-        alert('Ошибка входа. Проверьте подключение к серверу.');
+        alert('Ошибка входа');
       }
     }
   },
   mounted() {
-    // Если уже выбран пользователь, перенаправляем
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
+    // Если уже вошли, переходим на главную
+    const user = localStorage.getItem('user');
+    if (user) {
       this.$router.push('/');
     }
   }
 }
 </script>
 
-<style scoped>
-.user-select-view {
+<style>
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding-top: 100px;
+  background: #f5f5f5;
+  padding: 20px;
 }
 
-.card {
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+.login-box {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-box h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.user-list {
+  margin-bottom: 20px;
 }
 
 .user-item {
-  border: 1px solid #dee2e6;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
   margin-bottom: 10px;
-  border-radius: 10px;
-  transition: all 0.3s;
+  cursor: pointer;
+  transition: background 0.3s;
 }
 
 .user-item:hover {
-  background-color: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: #f0f0f0;
+}
+
+.user-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.user-name {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.user-role {
+  font-size: 14px;
+  color: #666;
+}
+
+.user-desc {
+  font-size: 13px;
+  color: #777;
+}
+
+.password-info {
+  background: #e8f4fc;
+  padding: 15px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.password-info p {
+  margin: 5px 0;
 }
 </style>

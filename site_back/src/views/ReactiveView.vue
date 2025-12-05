@@ -1,108 +1,62 @@
 <!-- site_back/src/views/ReactiveView.vue -->
 <template>
-  <div class="reactive-view">
-    <h1>🎯 Работа с реактивными переменными</h1>
+  <div class="reactive">
+    <h1>Реактивные переменные</h1>
     
-    <div class="currency-note">
-      💰 Все цены в долларах США ($)
-    </div>
-    
-    <!-- Реактивное отображение данных -->
-    <div class="demo-section">
-      <h2>📊 Реактивные данные</h2>
+    <div class="demo">
+      <h2>Основные данные</h2>
       
-      <div class="reactive-display">
-        <p><strong>Имя:</strong> {{ userName }}</p>
-        <p><strong>Возраст:</strong> {{ age }} лет</p>
-        <p><strong>Бюджет:</strong> {{ formatPrice(budget) }}</p>
-        <p><strong>Статус:</strong> 
-          <span :class="statusClass">{{ statusMessage }}</span>
+      <div class="data-show">
+        <p>Имя: {{ name }}</p>
+        <p>Возраст: {{ age }} лет</p>
+        <p>Бюджет: ${{ budget }}</p>
+        <p>Статус: 
+          <span class="status" :class="statusClass">{{ statusText }}</span>
         </p>
       </div>
 
-      <!-- Реактивное обновление данных -->
       <div class="controls">
-        <h3>🔄 Изменение данных</h3>
+        <h3>Изменение данных</h3>
         
-        <div class="input-group">
+        <div class="control-item">
           <label>Имя:</label>
-          <input v-model="userName" type="text" placeholder="Введите имя">
+          <input v-model="name" type="text">
         </div>
         
-        <div class="input-group">
+        <div class="control-item">
           <label>Возраст:</label>
-          <input v-model.number="age" type="number" min="0" placeholder="Введите возраст">
+          <input v-model.number="age" type="number">
         </div>
         
-        <div class="input-group">
-          <label>Бюджет ($):</label>
-          <input v-model.number="budget" type="number" min="0" placeholder="Введите бюджет">
-        </div>
-        
-        <div class="input-group">
-          <label>Цвет темы:</label>
-          <select v-model="themeColor" @change="updateTheme">
-            <option value="blue">Синий</option>
-            <option value="green">Зеленый</option>
-            <option value="purple">Фиолетовый</option>
-            <option value="orange">Оранжевый</option>
-          </select>
+        <div class="control-item">
+          <label>Бюджет:</label>
+          <input v-model.number="budget" type="number">
         </div>
       </div>
 
-      <!-- Реактивные вычисления -->
-      <div class="computed-section">
-        <h3>🧮 Вычисляемые свойства (Computed)</h3>
+      <div class="computed">
+        <h3>Вычисляемые значения</h3>
         
-        <div class="computed-display">
-          <p><strong>Год рождения:</strong> {{ birthYear }}</p>
-          <p><strong>Можно купить видеокарт:</strong> {{ possibleGPUs }}</p>
-          <p><strong>Категория бюджета:</strong> {{ budgetCategory }}</p>
-          <p><strong>Цена сборки:</strong> {{ formatPrice(buildPrice) }}</p>
+        <div class="computed-data">
+          <p>Год рождения: {{ birthYear }}</p>
+          <p>Категория бюджета: {{ budgetCategory }}</p>
+          <p>Цена сборки: ${{ buildPrice }}</p>
         </div>
       </div>
 
-      <!-- Реактивные стили -->
-      <div class="styling-section">
-        <h3>🎨 Реактивные стили</h3>
+      <div class="styles">
+        <h3>Реактивные стили</h3>
         
-        <div class="style-demo" 
-             :style="{
-               backgroundColor: themeColor + '20',
-               borderColor: themeColor,
-               color: textColor
-             }">
-          <p>Этот блок меняет стили реактивно</p>
-          <p>Текущий цвет: {{ themeColor }}</p>
+        <div class="color-box" :style="{ backgroundColor: boxColor }">
+          <p>Цвет блока: {{ boxColor }}</p>
         </div>
         
-        <div class="budget-meter">
-          <div class="meter-background">
-            <div class="meter-fill" :style="meterStyle"></div>
-          </div>
-          <p>Заполнение: {{ meterPercentage }}%</p>
-        </div>
-      </div>
-
-      <!-- Реактивные классы -->
-      <div class="class-section">
-        <h3>🏷️ Реактивные классы</h3>
-        
-        <div :class="[
-          'status-box',
-          budgetStatus
-        ]">
-          <p>{{ budgetStatusText }}</p>
-        </div>
-        
-        <button @click="togglePremium" 
-                :class="{
-                  'btn': true,
-                  'btn-premium': isPremium,
-                  'btn-standard': !isPremium
-                }">
-          {{ isPremium ? '⭐ Премиум режим' : '⚡ Стандартный режим' }}
-        </button>
+        <select v-model="boxColor">
+          <option value="#e8f4fd">Голубой</option>
+          <option value="#d5f4e6">Зеленый</option>
+          <option value="#f9e2e2">Красный</option>
+          <option value="#f4e2f9">Фиолетовый</option>
+        </select>
       </div>
     </div>
   </div>
@@ -113,25 +67,15 @@ export default {
   name: 'ReactiveView',
   data() {
     return {
-      // Реактивные переменные
-      userName: 'Иван',
+      name: 'Иван',
       age: 25,
       budget: 1500,
-      themeColor: 'blue',
-      isPremium: false,
-      baseBuildPrice: 800
+      boxColor: '#e8f4fd'
     }
   },
   computed: {
-    // Вычисляемые свойства (реактивные)
     birthYear() {
-      const currentYear = new Date().getFullYear();
-      return currentYear - this.age;
-    },
-    
-    possibleGPUs() {
-      const gpuPrice = 500; // Цена видеокарты в долларах
-      return Math.floor(this.budget / gpuPrice);
+      return 2024 - this.age;
     },
     
     budgetCategory() {
@@ -142,237 +86,129 @@ export default {
     },
     
     buildPrice() {
-      let price = this.baseBuildPrice;
-      if (this.isPremium) {
-        price *= 1.5; // Премиум сборка дороже
-      }
-      if (this.age > 30) {
-        price *= 0.9; // Скидка за возраст
-      }
-      return Math.round(price);
+      return 500 + (this.age * 20);
     },
     
-    statusMessage() {
+    statusText() {
       if (this.budget >= this.buildPrice) {
-        return 'Можно собрать ПК';
+        return 'Достаточно';
       } else {
-        return 'Бюджет недостаточен';
+        return 'Мало';
       }
     },
     
     statusClass() {
-      return this.budget >= this.buildPrice ? 'status-success' : 'status-error';
-    },
-    
-    textColor() {
-      const colors = {
-        blue: '#2c3e50',
-        green: '#27ae60',
-        purple: '#8e44ad',
-        orange: '#e67e22'
-      };
-      return colors[this.themeColor] || '#2c3e50';
-    },
-    
-    meterPercentage() {
-      const maxBudget = 3000;
-      return Math.min((this.budget / maxBudget) * 100, 100);
-    },
-    
-    meterStyle() {
-      return {
-        width: this.meterPercentage + '%',
-        backgroundColor: this.themeColor
-      };
-    },
-    
-    budgetStatus() {
-      if (this.budget < 500) return 'budget-low';
-      if (this.budget < 1500) return 'budget-medium';
-      return 'budget-high';
-    },
-    
-    budgetStatusText() {
-      switch (this.budgetStatus) {
-        case 'budget-low': return '🟡 Низкий бюджет';
-        case 'budget-medium': return '🟢 Средний бюджет';
-        case 'budget-high': return '🔴 Высокий бюджет';
-        default: return '⚪ Неопределен';
-      }
+      return this.budget >= this.buildPrice ? 'status-ok' : 'status-bad';
     }
   },
-  methods: {
-    // Форматирование цены в доллары
-    formatPrice(price) {
-      if (!price) return '$0';
-      return `$${price}`;
-    },
-
-    updateTheme() {
-      console.log('Тема изменена на:', this.themeColor);
-    },
-    
-    togglePremium() {
-      this.isPremium = !this.isPremium;
-    }
-  },
-  // Наблюдатели за изменениями
   watch: {
-    budget(newBudget, oldBudget) {
-      console.log(`Бюджет изменился: $${oldBudget} → $${newBudget}`);
-      
-      if (newBudget > oldBudget) {
-        console.log('🎉 Бюджет увеличен!');
-      } else if (newBudget < oldBudget) {
-        console.log('📉 Бюджет уменьшен');
-      }
-    },
-    
-    userName(newName) {
-      console.log('Имя пользователя изменено на:', newName);
+    budget(newVal, oldVal) {
+      console.log('Бюджет изменился с', oldVal, 'на', newVal);
     }
   }
 }
 </script>
 
-<style scoped>
-.reactive-view {
-  max-width: 800px;
+<style>
+.reactive {
+  max-width: 600px;
   margin: 0 auto;
   padding: 20px;
 }
 
-.currency-note {
-  background: #e8f4fd;
-  padding: 10px 15px;
-  border-radius: 5px;
-  margin-bottom: 15px;
-  border-left: 4px solid #3498db;
-  font-weight: bold;
-  color: #2c3e50;
-  text-align: center;
-}
-
-.demo-section {
-  margin-bottom: 30px;
-}
-
-.reactive-display, .computed-display {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  margin: 15px 0;
-}
-
-.controls {
+.demo {
   background: white;
   padding: 20px;
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #ddd;
 }
 
-.input-group {
-  margin: 10px 0;
+.data-show {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
 }
 
-label {
+.data-show p {
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.controls {
+  margin: 20px 0;
+}
+
+.control-item {
+  margin: 15px 0;
+}
+
+.control-item label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
 }
 
-input, select {
+.control-item input {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 16px;
 }
 
-.style-demo {
-  padding: 20px;
-  border-radius: 8px;
-  margin: 15px 0;
-  border: 2px solid;
-  transition: all 0.3s ease;
-}
-
-.budget-meter {
+.computed {
   margin: 20px 0;
-}
-
-.meter-background {
-  width: 100%;
-  height: 20px;
-  background: #ecf0f1;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.meter-fill {
-  height: 100%;
-  transition: width 0.5s ease;
-}
-
-.status-box {
   padding: 15px;
-  border-radius: 8px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.computed-data p {
   margin: 10px 0;
+}
+
+.styles {
+  margin-top: 20px;
+}
+
+.color-box {
+  padding: 20px;
+  border-radius: 6px;
+  margin: 15px 0;
+  border: 2px solid #ddd;
+}
+
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.status {
+  padding: 3px 8px;
+  border-radius: 4px;
   font-weight: bold;
-  text-align: center;
 }
 
-.budget-low {
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
-  color: #856404;
+.status-ok {
+  background: #d4edda;
+  color: #155724;
 }
 
-.budget-medium {
-  background: #d1ecf1;
-  border: 1px solid #bee5eb;
-  color: #0c5460;
-}
-
-.budget-high {
+.status-bad {
   background: #f8d7da;
-  border: 1px solid #f5c6cb;
   color: #721c24;
 }
 
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s ease;
+h1, h2, h3 {
+  color: #333;
 }
 
-.btn-premium {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #000;
-}
-
-.btn-standard {
-  background: #3498db;
-  color: white;
-}
-
-.status-success {
-  color: #27ae60;
-  font-weight: bold;
-}
-
-.status-error {
-  color: #e74c3c;
-  font-weight: bold;
-}
-
-.computed-section, .styling-section, .class-section {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  margin: 20px 0;
-  border: 1px solid #e9ecef;
+h1 {
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
 }
 </style>

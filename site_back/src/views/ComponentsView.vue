@@ -7,7 +7,7 @@
       Цены в долларах ($)
     </div>
 
-    <!-- Форма -->
+  
     <div class="card mb-4">
       <div class="card-header">
         <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Добавить' }} компонент</h5>
@@ -57,7 +57,7 @@
               </div>
             </div>
             
-            <!-- Загрузка изображения -->
+            
             <div class="col-12 mb-3">
               <label class="form-label">Изображение</label>
               <input 
@@ -68,14 +68,14 @@
                 ref="fileInput"
               >
               
-              <!-- Предпросмотр -->
+              
               <div v-if="imagePreview" class="mt-3">
                 <p class="mb-2">Предпросмотр:</p>
                 <img :src="imagePreview" class="img-thumbnail" style="max-height: 150px; cursor: pointer" 
                      @click="showImageModal(imagePreview)">
               </div>
               
-              <!-- Текущее изображение -->
+              
               <div v-else-if="isEditing && currentImage" class="mt-3">
                 <p class="mb-2">Текущее изображение:</p>
                 <img :src="currentImage" class="img-thumbnail" style="max-height: 150px; cursor: pointer"
@@ -96,7 +96,7 @@
       </div>
     </div>
 
-    <!-- Список компонентов -->
+    
     <div class="card">
       <div class="card-header d-flex justify-content-between">
         <h5 class="mb-0">Список компонентов ({{ components.length }})</h5>
@@ -161,7 +161,7 @@
       </div>
     </div>
 
-    <!-- Модальное окно деталей -->
+    
     <div v-if="selectedComponent" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -201,7 +201,7 @@
       </div>
     </div>
 
-    <!-- Модальное окно для изображения -->
+    
     <div v-if="showImageModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -278,7 +278,7 @@ export default {
       if (file) {
         this.imageFile = file;
         
-        // Создаем preview
+        
         const reader = new FileReader();
         reader.onload = (e) => {
           this.imagePreview = e.target.result;
@@ -292,7 +292,7 @@ export default {
       try {
         const formData = new FormData();
         
-        // Текстовые данные
+        
         formData.append('name', this.form.name);
         formData.append('component_type', this.form.component_type);
         formData.append('manufacturer', this.form.manufacturer);
@@ -300,7 +300,7 @@ export default {
         formData.append('description', this.form.description);
         formData.append('in_stock', this.form.in_stock);
         
-        // Изображение
+        
         if (this.imageFile) {
           formData.append('image', this.imageFile);
         }

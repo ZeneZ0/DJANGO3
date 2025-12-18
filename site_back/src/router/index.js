@@ -24,34 +24,34 @@ const routes = [
     component: () => import('../views/ArraysView.vue')
   },
   {
-    path: '/backend-data',
-    name: 'backend-data',
+    path: '/data',
+    name: 'data',
     component: () => import('../views/BackendDataView.vue')
   },
-  // Новые маршруты для управления данными
+  
   {
-    path: '/manage/component-types',
+    path: '/component-types',
     name: 'component-types',
     component: () => import('../views/ComponentTypesView.vue')
   },
   {
-    path: '/manage/manufacturers',
+    path: '/manufacturers',
     name: 'manufacturers',
     component: () => import('../views/ManufacturersView.vue')
   },
   {
-    path: '/manage/components',
+    path: '/components',
     name: 'components',
     component: () => import('../views/ComponentsView.vue')
   },
   {
-    path: '/manage/configurations',
-    name: 'configurations',
+    path: '/configs', 
+    name: 'configs',
     component: () => import('../views/PCConfigurationsView.vue')
   },
   {
-    path: '/manage/build-requests',
-    name: 'build-requests',
+    path: '/requests',
+    name: 'requests',
     component: () => import('../views/BuildRequestsView.vue')
   }
 ]

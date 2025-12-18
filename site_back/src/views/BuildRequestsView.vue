@@ -7,7 +7,7 @@
       Цены в долларах ($)
     </div>
 
-    <!-- Форма -->
+    
     <div class="card mb-4">
       <div class="card-header">
         <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Создать' }} запрос</h5>
@@ -68,7 +68,7 @@
       </div>
     </div>
 
-    <!-- Список запросов -->
+    
     <div class="card">
       <div class="card-header d-flex justify-content-between">
         <h5 class="mb-0">Список запросов ({{ requests.length }})</h5>
@@ -136,7 +136,7 @@
       </div>
     </div>
 
-    <!-- Модальное окно деталей -->
+    
     <div v-if="selectedRequest" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -329,7 +329,7 @@ export default {
     },
 
     applyFilter() {
-      // Фильтрация через computed
+      
     },
 
     resetForm() {

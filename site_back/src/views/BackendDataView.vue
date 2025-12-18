@@ -25,7 +25,6 @@
       </div>
     </div>
 
-    <!-- Компоненты -->
     <div v-if="activeData.components" class="mb-4">
       <h3>Компоненты</h3>
       
@@ -66,7 +65,6 @@
       </div>
     </div>
 
-    <!-- Производители -->
     <div v-if="activeData.manufacturers" class="mb-4">
       <h3>Производители</h3>
       <div class="row">
@@ -85,7 +83,7 @@
       </div>
     </div>
 
-    <!-- Типы компонентов -->
+    
     <div v-if="activeData.componentTypes" class="mb-4">
       <h3>Типы компонентов</h3>
       <div class="row">
@@ -100,7 +98,7 @@
       </div>
     </div>
 
-    <!-- Конфигурации -->
+   
     <div v-if="activeData.configurations" class="mb-4">
       <h3>Конфигурации ПК</h3>
       <div class="row">
@@ -126,7 +124,6 @@
       </div>
     </div>
 
-    <!-- Статистика -->
     <div v-if="showStats" class="mb-4">
       <h3>Статистика</h3>
       <div class="row">
@@ -165,7 +162,6 @@
       </div>
     </div>
 
-    <!-- Ошибка -->
     <div v-if="error" class="alert alert-danger">
       <h5>Ошибка загрузки данных</h5>
       <p>{{ error }}</p>

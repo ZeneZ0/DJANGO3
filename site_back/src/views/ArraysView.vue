@@ -1,127 +1,152 @@
 <!-- site_back/src/views/ArraysView.vue -->
 <template>
-  <div class="arrays-view">
-    <h1>📋 Работа с массивами</h1>
+  <div class="container mt-4">
+    <h1 class="mb-4">Работа с массивами</h1>
     
-    <div class="currency-note">
-      💰 Все цены в долларах США ($)
+    <div class="alert alert-info mb-3">
+      Цены в долларах ($)
     </div>
+
     
-    <div class="demo-section">
-      <h2>🛒 Компоненты для ПК</h2>
-      
-      <!-- Форма добавления компонента -->
-      <div class="add-form">
-        <h3>➕ Добавить компонент</h3>
-        <form @submit.prevent="addComponent" class="form">
-          <input v-model="newComponent.name" placeholder="Название" required>
-          <input v-model.number="newComponent.price" type="number" placeholder="Цена ($)" required>
-          <select v-model="newComponent.type">
-            <option value="">Выберите тип</option>
-            <option value="cpu">Процессор</option>
-            <option value="gpu">Видеокарта</option>
-            <option value="ram">Оперативная память</option>
-            <option value="storage">Накопитель</option>
-          </select>
-          <button type="submit">Добавить</button>
-        </form>
-      </div>
-
-      <!-- Фильтрация и поиск -->
-      <div class="filters">
-        <h3>🔍 Фильтры</h3>
-        <div class="filter-controls">
-          <input v-model="searchQuery" placeholder="Поиск по названию..." class="search-input">
-          <select v-model="filterType" class="type-filter">
-            <option value="">Все типы</option>
-            <option value="cpu">Процессоры</option>
-            <option value="gpu">Видеокарты</option>
-            <option value="ram">Память</option>
-            <option value="storage">Накопители</option>
-          </select>
-          <button @click="sortByPrice" class="sort-btn">
-            {{ sortAscending ? '↑ По цене' : '↓ По цене' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Список компонентов -->
-      <div class="components-list">
-        <h3>📦 Список компонентов ({{ filteredComponents.length }})</h3>
-        
-        <div v-if="filteredComponents.length === 0" class="empty-state">
-          😔 Компоненты не найдены
-        </div>
-        
-        <div v-else>
-          <div v-for="component in filteredComponents" 
-               :key="component.id" 
-               class="component-item"
-               :class="{
-                 'selected': selectedComponents.includes(component.id),
-                 'expensive': component.price > 500
-               }">
-            
-            <div class="component-info">
-              <h4>{{ component.name }}</h4>
-              <p class="component-type">{{ getTypeName(component.type) }}</p>
-              <p class="component-price">{{ formatPrice(component.price) }}</p>
-            </div>
-            
-            <div class="component-actions">
-              <button @click="toggleSelection(component.id)" 
-                      :class="{
-                        'select-btn': true,
-                        'selected': selectedComponents.includes(component.id)
-                      }">
-                {{ selectedComponents.includes(component.id) ? '✓ Выбрано' : 'Выбрать' }}
-              </button>
-              <button @click="editComponent(component)" class="edit-btn">✏️</button>
-              <button @click="removeComponent(component.id)" class="delete-btn">🗑️</button>
-            </div>
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Добавить компонент</h5>
+        <form @submit.prevent="addComponent" class="row g-3">
+          <div class="col-md-5">
+            <input v-model="newComponent.name" placeholder="Название" class="form-control" required>
           </div>
-        </div>
-      </div>
-
-      <!-- Выбранные компоненты -->
-      <div v-if="selectedComponents.length > 0" class="selected-section">
-        <h3>🛍️ Выбранные компоненты</h3>
-        <div class="selected-list">
-          <div v-for="id in selectedComponents" 
-               :key="id" 
-               class="selected-item">
-            {{ getComponentById(id)?.name }} - {{ formatPrice(getComponentById(id)?.price) }}
-            <button @click="removeFromSelection(id)" class="remove-btn">✕</button>
+          <div class="col-md-3">
+            <input v-model.number="newComponent.price" type="number" placeholder="Цена" class="form-control" required>
           </div>
-        </div>
-        
-        <div class="selection-stats">
-          <p><strong>Итого:</strong> {{ formatPrice(totalSelectedPrice) }}</p>
-          <p><strong>Количество:</strong> {{ selectedComponents.length }} шт.</p>
-          <p><strong>Средняя цена:</strong> {{ formatPrice(averagePrice) }}</p>
-        </div>
-        
-        <button @click="clearSelection" class="clear-btn">Очистить выбор</button>
-      </div>
-
-      <!-- Модальное окно редактирования -->
-      <div v-if="editingComponent" class="modal-overlay">
-        <div class="modal">
-          <h3>✏️ Редактировать компонент</h3>
-          <form @submit.prevent="updateComponent" class="form">
-            <input v-model="editingComponent.name" placeholder="Название" required>
-            <input v-model.number="editingComponent.price" type="number" placeholder="Цена ($)" required>
-            <select v-model="editingComponent.type" required>
+          <div class="col-md-3">
+            <select v-model="newComponent.type" class="form-select">
+              <option value="">Тип</option>
               <option value="cpu">Процессор</option>
               <option value="gpu">Видеокарта</option>
-              <option value="ram">Оперативная память</option>
+              <option value="ram">Память</option>
               <option value="storage">Накопитель</option>
             </select>
-            <div class="modal-actions">
-              <button type="submit">Сохранить</button>
-              <button type="button" @click="cancelEdit">Отмена</button>
-            </div>
-          </form>
+          </div>
+          <div class="col-md-1">
+            <button type="submit" class="btn btn-primary w-100">+</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <input v-model="searchQuery" placeholder="Поиск..." class="form-control">
+      </div>
+      <div class="col-md-4">
+        <select v-model="filterType" class="form-select">
+          <option value="">Все типы</option>
+          <option value="cpu">Процессоры</option>
+          <option value="gpu">Видеокарты</option>
+          <option value="ram">Память</option>
+          <option value="storage">Накопители</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button @click="sortByPrice" class="btn btn-outline-secondary w-100">
+          {{ sortAscending ? '↑ Цена' : '↓ Цена' }}
+        </button>
+      </div>
+    </div>
+
+    
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Список компонентов ({{ filteredComponents.length }})</h5>
+        
+        <div v-if="filteredComponents.length === 0" class="text-center text-muted py-4">
+          Компоненты не найдены
+        </div>
+        
+        <table v-else class="table">
+          <tbody>
+            <tr v-for="component in filteredComponents" 
+                :key="component.id"
+                :class="{ 'table-primary': selectedComponents.includes(component.id) }">
+              <td>
+                <strong>{{ component.name }}</strong><br>
+                <small class="text-muted">{{ getTypeName(component.type) }}</small>
+              </td>
+              <td class="text-end">
+                <strong>${{ component.price }}</strong>
+              </td>
+              <td class="text-end">
+                <button @click="toggleSelection(component.id)" 
+                        class="btn btn-sm me-1"
+                        :class="selectedComponents.includes(component.id) ? 'btn-success' : 'btn-outline-success'">
+                  {{ selectedComponents.includes(component.id) ? '✓' : '+' }}
+                </button>
+                <button @click="editComponent(component)" class="btn btn-warning btn-sm me-1">Изм</button>
+                <button @click="removeComponent(component.id)" class="btn btn-danger btn-sm">Уд</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    
+    <div v-if="selectedComponents.length > 0" class="card mt-4">
+      <div class="card-body">
+        <h5 class="card-title">Выбранные компоненты</h5>
+        
+        <ul class="list-group mb-3">
+          <li v-for="id in selectedComponents" :key="id" class="list-group-item d-flex justify-content-between">
+            <span>{{ getComponentById(id)?.name }} - ${{ getComponentById(id)?.price }}</span>
+            <button @click="removeFromSelection(id)" class="btn btn-sm btn-outline-danger">×</button>
+          </li>
+        </ul>
+        
+        <div class="row">
+          <div class="col-md-4">
+            <p><strong>Итого:</strong> ${{ totalSelectedPrice }}</p>
+          </div>
+          <div class="col-md-4">
+            <p><strong>Количество:</strong> {{ selectedComponents.length }} шт.</p>
+          </div>
+          <div class="col-md-4">
+            <button @click="clearSelection" class="btn btn-outline-secondary w-100">Очистить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+    <div v-if="editingComponent" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Редактировать</h5>
+            <button type="button" class="btn-close" @click="cancelEdit"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="updateComponent">
+              <div class="mb-3">
+                <input v-model="editingComponent.name" placeholder="Название" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <input v-model.number="editingComponent.price" type="number" placeholder="Цена" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <select v-model="editingComponent.type" class="form-select" required>
+                  <option value="cpu">Процессор</option>
+                  <option value="gpu">Видеокарта</option>
+                  <option value="ram">Память</option>
+                  <option value="storage">Накопитель</option>
+                </select>
+              </div>
+              <div class="text-end">
+                <button type="button" class="btn btn-secondary me-2" @click="cancelEdit">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -133,7 +158,6 @@ export default {
   name: 'ArraysView',
   data() {
     return {
-      // Массив компонентов
       components: [
         { id: 1, name: 'Intel Core i5', price: 180, type: 'cpu' },
         { id: 2, name: 'AMD Ryzen 7', price: 250, type: 'cpu' },
@@ -142,42 +166,33 @@ export default {
         { id: 5, name: 'Kingston 16GB', price: 40, type: 'ram' },
         { id: 6, name: 'Samsung 1TB SSD', price: 60, type: 'storage' }
       ],
-      // Новый компонент для формы
       newComponent: {
         name: '',
         price: 0,
         type: ''
       },
-      // Выбранные компоненты
       selectedComponents: [],
-      // Поиск и фильтры
       searchQuery: '',
       filterType: '',
       sortAscending: true,
-      // Редактирование
       editingComponent: null,
-      // Счетчик для ID
       nextId: 7
     }
   },
   computed: {
-    // Фильтрованный и отсортированный массив
     filteredComponents() {
       let filtered = this.components;
       
-      // Фильтрация по поиску
       if (this.searchQuery) {
-        filtered = filtered.filter(component => 
-          component.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+        filtered = filtered.filter(c => 
+          c.name.toLowerCase().includes(this.searchQuery.toLowerCase())
         );
       }
       
-      // Фильтрация по типу
       if (this.filterType) {
-        filtered = filtered.filter(component => component.type === this.filterType);
+        filtered = filtered.filter(c => c.type === this.filterType);
       }
       
-      // Сортировка по цене
       filtered = [...filtered].sort((a, b) => {
         return this.sortAscending ? a.price - b.price : b.price - a.price;
       });
@@ -185,28 +200,14 @@ export default {
       return filtered;
     },
     
-    // Общая стоимость выбранных компонентов
     totalSelectedPrice() {
       return this.selectedComponents.reduce((total, id) => {
         const component = this.getComponentById(id);
         return total + (component?.price || 0);
       }, 0);
-    },
-    
-    // Средняя цена выбранных компонентов
-    averagePrice() {
-      if (this.selectedComponents.length === 0) return 0;
-      return Math.round(this.totalSelectedPrice / this.selectedComponents.length);
     }
   },
   methods: {
-    // Форматирование цены в доллары
-    formatPrice(price) {
-      if (!price) return '$0';
-      return `$${price}`;
-    },
-
-    // Добавление компонента в массив
     addComponent() {
       const component = {
         id: this.nextId++,
@@ -216,18 +217,15 @@ export default {
       this.newComponent = { name: '', price: 0, type: '' };
     },
     
-    // Удаление компонента из массива
     removeComponent(id) {
-      this.components = this.components.filter(component => component.id !== id);
+      this.components = this.components.filter(c => c.id !== id);
       this.selectedComponents = this.selectedComponents.filter(selectedId => selectedId !== id);
     },
     
-    // Редактирование компонента
     editComponent(component) {
       this.editingComponent = { ...component };
     },
     
-    // Обновление компонента
     updateComponent() {
       const index = this.components.findIndex(c => c.id === this.editingComponent.id);
       if (index !== -1) {
@@ -240,7 +238,6 @@ export default {
       this.editingComponent = null;
     },
     
-    // Работа с выбранными компонентами
     toggleSelection(id) {
       const index = this.selectedComponents.indexOf(id);
       if (index === -1) {
@@ -258,19 +255,18 @@ export default {
       this.selectedComponents = [];
     },
     
-    // Вспомогательные методы
     getComponentById(id) {
-      return this.components.find(component => component.id === id);
+      return this.components.find(c => c.id === id);
     },
     
     getTypeName(type) {
       const types = {
         cpu: 'Процессор',
         gpu: 'Видеокарта',
-        ram: 'Оперативная память',
+        ram: 'Память',
         storage: 'Накопитель'
       };
-      return types[type] || 'Неизвестный тип';
+      return types[type] || 'Неизвестно';
     },
     
     sortByPrice() {
@@ -279,236 +275,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.arrays-view {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.currency-note {
-  background: #e8f4fd;
-  padding: 10px 15px;
-  border-radius: 5px;
-  margin-bottom: 15px;
-  border-left: 4px solid #3498db;
-  font-weight: bold;
-  color: #2c3e50;
-  text-align: center;
-}
-
-.demo-section {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.add-form {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.form {
-  display: flex;
-  gap: 10px;
-  align-items: end;
-}
-
-.form input, .form select {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  flex: 1;
-}
-
-.filters {
-  margin-bottom: 20px;
-}
-
-.filter-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.search-input, .type-filter, .sort-btn {
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.search-input {
-  flex: 2;
-}
-
-.type-filter {
-  flex: 1;
-}
-
-.sort-btn {
-  background: #3498db;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.components-list {
-  margin-bottom: 20px;
-}
-
-.component-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  transition: all 0.3s ease;
-}
-
-.component-item:hover {
-  border-color: #3498db;
-}
-
-.component-item.selected {
-  background: #e8f4fd;
-  border-color: #3498db;
-}
-
-.component-item.expensive {
-  border-left: 4px solid #e74c3c;
-}
-
-.component-info h4 {
-  margin: 0 0 5px 0;
-  color: #2c3e50;
-}
-
-.component-type {
-  color: #7f8c8d;
-  font-size: 0.9em;
-  margin: 0;
-}
-
-.component-price {
-  color: #27ae60;
-  font-weight: bold;
-  margin: 0;
-}
-
-.component-actions {
-  display: flex;
-  gap: 5px;
-}
-
-.select-btn, .edit-btn, .delete-btn {
-  padding: 5px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9em;
-}
-
-.select-btn {
-  background: #ecf0f1;
-  color: #2c3e50;
-}
-
-.select-btn.selected {
-  background: #27ae60;
-  color: white;
-}
-
-.edit-btn {
-  background: #3498db;
-  color: white;
-}
-
-.delete-btn {
-  background: #e74c3c;
-  color: white;
-}
-
-.selected-section {
-  background: #e8f4fd;
-  padding: 20px;
-  border-radius: 8px;
-  border-left: 4px solid #3498db;
-}
-
-.selected-list {
-  margin: 15px 0;
-}
-
-.selected-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: white;
-  border-radius: 4px;
-  margin-bottom: 5px;
-}
-
-.remove-btn {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-}
-
-.selection-stats {
-  background: white;
-  padding: 15px;
-  border-radius: 4px;
-  margin: 15px 0;
-}
-
-.clear-btn {
-  background: #95a5a6;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  min-width: 400px;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: #7f8c8d;
-  font-size: 1.1em;
-}
-</style>

@@ -1,5 +1,5 @@
 <script>
-import axios from 'axios'
+import axios from 'axios';
 
 function getCookie(name) {
   let cookieValue = null
@@ -27,23 +27,20 @@ export default {
       isEditing: false,
       editId: null,
       selectedRequest: null,
-      statusFilter: '',
-      userFilter: '',
-      stats: null,
-      form: {
-        user: '',
-        configuration: '',
-        budget: 0,
-        status: 'pending',
-        notes: ''
-      },
       columnFilters: {
         id: '',
         user_name: '',
         configuration_name: '',
         budget_min: '',
         budget_max: '',
-        status_filter: ''
+        status: ''
+      },
+      form: {
+        user: '',
+        configuration: '',
+        budget: 0,
+        status: 'pending',
+        notes: ''
       }
     }
   },
@@ -59,15 +56,14 @@ export default {
       
       if (this.columnFilters.user_name) {
         filtered = filtered.filter(req => 
-          req.user_name.toLowerCase().includes(this.columnFilters.user_name.toLowerCase())
+          req.user_name?.toLowerCase().includes(this.columnFilters.user_name.toLowerCase())
         )
       }
       
       if (this.columnFilters.configuration_name) {
-        filtered = filtered.filter(req => {
-          const configName = this.getConfigName(req.configuration).toLowerCase()
-          return configName.includes(this.columnFilters.configuration_name.toLowerCase())
-        })
+        filtered = filtered.filter(req => 
+          req.configuration_name?.toLowerCase().includes(this.columnFilters.configuration_name.toLowerCase())
+        )
       }
       
       if (this.columnFilters.budget_min) {
@@ -75,15 +71,16 @@ export default {
           req.budget >= parseFloat(this.columnFilters.budget_min)
         )
       }
+      
       if (this.columnFilters.budget_max) {
         filtered = filtered.filter(req => 
           req.budget <= parseFloat(this.columnFilters.budget_max)
         )
       }
       
-      if (this.columnFilters.status_filter) {
+      if (this.columnFilters.status) {
         filtered = filtered.filter(req => 
-          req.status === this.columnFilters.status_filter
+          req.status === this.columnFilters.status
         )
       }
       
@@ -92,180 +89,173 @@ export default {
   },
   methods: {
     async loadData() {
-      this.loading = true
+      this.loading = true;
       try {
-        const params = {}
-        if (this.userFilter) {
-          params.user_id = this.userFilter
-        }
-        const response = await axios.get('/api/build-requests/', { params })
-        this.requests = response.data
+        const response = await axios.get('/api/build-requests/');
+        this.requests = response.data;
       } catch (error) {
-        console.error('Ошибка загрузки:', error)
-        alert('Ошибка загрузки данных')
+        console.error('Ошибка загрузки:', error);
+        alert('Ошибка загрузки данных');
       }
-      this.loading = false
+      this.loading = false;
     },
 
     async loadReferenceData() {
       try {
-        const [configsResponse, statsResponse, authResponse] = await Promise.all([
+        const [configs, users] = await Promise.all([
           axios.get('/api/configurations/'),
-          axios.get('/api/stats/'),
-          axios.get('/api/auth/user/')
-        ])
-        
-        this.configurations = configsResponse.data
-        this.stats = statsResponse.data
-        
-        if (authResponse.data.is_superuser) {
-          try {
-            const usersResponse = await axios.get('/api/management/users/')
-            this.users = usersResponse.data
-          } catch (e) {
-            console.error('Ошибка загрузки пользователей:', e)
-          }
-        }
+          axios.get('/api/management/users/')
+        ]);
+        this.configurations = configs.data;
+        this.users = users.data;
       } catch (error) {
-        console.error('Ошибка загрузки данных:', error)
+        console.error('Ошибка загрузки справочников:', error);
       }
     },
 
-    updateBudget() {
-      const config = this.configurations.find(c => c.id === this.form.configuration)
-      if (config && !this.isEditing) {
-        this.form.budget = config.total_price
-      }
-    },
-
-    async saveRequest() {
+    async exportToExcel() {
       this.loading = true
       try {
-        if (this.isEditing) {
-          await axios.put(`/api/build-requests/${this.editId}/`, this.form)
-        } else {
-          await axios.post('/api/build-requests/', this.form)
-        }
+        const params = {}
+        if (this.columnFilters.id) params.id = this.columnFilters.id
+        if (this.columnFilters.user_name) params.user_name = this.columnFilters.user_name
+        if (this.columnFilters.configuration_name) params.configuration_name = this.columnFilters.configuration_name
+        if (this.columnFilters.budget_min) params.budget_min = this.columnFilters.budget_min
+        if (this.columnFilters.budget_max) params.budget_max = this.columnFilters.budget_max
+        if (this.columnFilters.status) params.status = this.columnFilters.status
+
+        const response = await axios.get('/api/build-requests/export_excel/', {
+          responseType: 'blob',
+          params: params,
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+          }
+        })
         
-        await this.loadData()
-        this.resetForm()
-        alert('Сохранено успешно')
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `requests_${new Date().toISOString().split('T')[0]}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        
+        alert('Файл успешно экспортирован')
       } catch (error) {
-        console.error('Ошибка сохранения:', error)
-        alert('Ошибка сохранения')
+        console.error('Ошибка экспорта:', error)
+        alert('Ошибка при экспорте файла')
       }
       this.loading = false
     },
 
+    async saveRequest() {
+      this.loading = true;
+      try {
+        const headers = {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'Content-Type': 'application/json'
+        };
+
+        if (this.isEditing) {
+          await axios.put(`/api/build-requests/${this.editId}/`, this.form, { headers });
+        } else {
+          await axios.post('/api/build-requests/', this.form, { headers });
+        }
+        
+        await this.loadData();
+        this.resetForm();
+        alert('Сохранено успешно');
+      } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        if (error.response?.status === 403) {
+          alert('Нет прав для выполнения этого действия');
+        } else if (error.response?.status === 401) {
+          alert('Требуется авторизация');
+        } else {
+          alert('Ошибка сохранения: ' + (error.response?.data?.error || error.message));
+        }
+      }
+      this.loading = false;
+    },
+
     editRequest(req) {
-      this.isEditing = true
-      this.editId = req.id
-      this.form = { ...req }
+      this.isEditing = true;
+      this.editId = req.id;
+      this.form = { 
+        user: req.user,
+        configuration: req.configuration,
+        budget: req.budget,
+        status: req.status,
+        notes: req.notes || ''
+      };
     },
 
     cancelEdit() {
-      this.resetForm()
+      this.resetForm();
     },
 
     async deleteRequest(id) {
-      if (!confirm('Удалить запрос?')) return
+      if (!confirm('Удалить заявку?')) return;
       
       try {
-        await axios.delete(`/api/build-requests/${id}/`)
-        this.requests = this.requests.filter(r => r.id !== id)
+        await axios.delete(`/api/build-requests/${id}/`, {
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+          }
+        });
+        await this.loadData();
+        alert('Удалено успешно');
       } catch (error) {
-        console.error('Ошибка удаления:', error)
-        alert('Ошибка удаления')
+        console.error('Ошибка удаления:', error);
+        if (error.response?.status === 403) {
+          alert('Нет прав для удаления');
+        } else if (error.response?.status === 401) {
+          alert('Требуется авторизация');
+        } else {
+          alert('Ошибка удаления');
+        }
       }
     },
 
     showDetails(req) {
-      this.selectedRequest = req
-    },
-
-    getConfigName(configId) {
-      const config = this.configurations.find(c => c.id === configId)
-      return config ? config.name : `Конфигурация #${configId}`
-    },
-
-    getStatusText(status) {
-      const texts = {
-        pending: 'Ожидает',
-        in_progress: 'В работе',
-        completed: 'Завершено',
-        cancelled: 'Отменено'
-      }
-      return texts[status] || status
-    },
-
-    getStatusBadge(status) {
-      const badges = {
-        pending: 'bg-warning',
-        in_progress: 'bg-info',
-        completed: 'bg-success',
-        cancelled: 'bg-danger'
-      }
-      return badges[status] || 'bg-secondary'
-    },
-
-    getStatusClass(status) {
-      if (status === 'completed') return 'table-success'
-      if (status === 'cancelled') return 'table-danger'
-      if (status === 'in_progress') return 'table-info'
-      return ''
+      this.selectedRequest = req;
     },
 
     formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString()
+      return new Date(dateStr).toLocaleDateString();
+    },
+
+    getStatusText(status) {
+      const statusMap = {
+        'pending': 'Ожидает',
+        'in_progress': 'В работе',
+        'completed': 'Завершено',
+        'cancelled': 'Отменено'
+      };
+      return statusMap[status] || status;
+    },
+
+    getStatusClass(status) {
+      const classMap = {
+        'pending': 'bg-warning',
+        'in_progress': 'bg-info',
+        'completed': 'bg-success',
+        'cancelled': 'bg-danger'
+      };
+      return classMap[status] || 'bg-secondary';
     },
 
     resetForm() {
-      this.isEditing = false
-      this.editId = null
+      this.isEditing = false;
+      this.editId = null;
       this.form = {
         user: '',
         configuration: '',
         budget: 0,
         status: 'pending',
         notes: ''
-      }
+      };
     },
-
-    async exportToExcel() {
-  this.loading = true
-  try {
-    const params = {}
-    if (this.columnFilters.id) params.id = this.columnFilters.id
-    if (this.columnFilters.user_name) params.user_name = this.columnFilters.user_name
-    if (this.columnFilters.configuration_name) params.configuration_name = this.columnFilters.configuration_name
-    if (this.columnFilters.budget_min) params.budget_min = this.columnFilters.budget_min
-    if (this.columnFilters.budget_max) params.budget_max = this.columnFilters.budget_max
-    if (this.columnFilters.status_filter) params.status = this.columnFilters.status_filter
-    if (this.userFilter) params.user_id = this.userFilter
-
-    const response = await axios.get('/api/build-requests/export_excel/', {
-      responseType: 'blob',
-      params: params,
-      headers: {
-        'X-CSRFToken': getCookie('csrftoken')
-      }
-    })
-    
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `requests_${new Date().toISOString().split('T')[0]}.xlsx`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    
-    alert('Файл успешно экспортирован')
-  } catch (error) {
-    console.error('Ошибка экспорта:', error)
-    alert('Ошибка при экспорте файла')
-  }
-  this.loading = false
-},
 
     resetFilters() {
       this.columnFilters = {
@@ -274,70 +264,49 @@ export default {
         configuration_name: '',
         budget_min: '',
         budget_max: '',
-        status_filter: ''
+        status: ''
       }
     }
   },
   mounted() {
-    this.loadData()
-    this.loadReferenceData()
+    this.loadData();
+    this.loadReferenceData();
   }
 }
 </script>
+
 <template>
   <div class="container mt-4">
-    <h1 class="mb-4">Управление запросами на сборку</h1>
+    <h1 class="mb-4">Управление заявками на сборку</h1>
 
-    <div class="row mb-4" v-if="stats">
-      <div class="col-md-3">
-        <div class="card text-white bg-primary">
-          <div class="card-body">
-            <h6 class="card-title">Всего запросов</h6>
-            <h3>{{ stats.requests_count }}</h3>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-white bg-success">
-          <div class="card-body">
-            <h6 class="card-title">Средний чек</h6>
-            <h3>${{ Math.round(stats.avg_request_budget) }}</h3>
-          </div>
-        </div>
-      </div>
-       <div class="col-md-6">
-         <div class="alert alert-info h-100 d-flex align-items-center">
-            Цены в долларах ($)
-         </div>
-      </div>
+    <div class="alert alert-info mb-3">
+      Цены в долларах ($)
     </div>
 
+    
     <div class="card mb-4">
       <div class="card-header">
-        <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Создать' }} запрос</h5>
+        <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Создать' }} заявку</h5>
       </div>
       <div class="card-body">
         <form @submit.prevent="saveRequest">
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label class="form-label">Пользователь</label>
-              <select v-if="users.length > 0" v-model="form.user" class="form-select" required>
+              <label class="form-label">Пользователь *</label>
+              <select v-model="form.user" class="form-select" required>
                 <option value="">Выберите пользователя</option>
                 <option v-for="user in users" :key="user.id" :value="user.id">
                   {{ user.username }}
                 </option>
               </select>
-              <input v-else type="text" class="form-control" 
-                     :value="isEditing ? form.user_name : 'Текущий пользователь'" 
-                     readonly disabled>
             </div>
             
             <div class="col-md-6 mb-3">
               <label class="form-label">Конфигурация *</label>
-              <select v-model="form.configuration" class="form-select" required @change="updateBudget">
+              <select v-model="form.configuration" class="form-select" required>
                 <option value="">Выберите конфигурацию</option>
                 <option v-for="config in configurations" :key="config.id" :value="config.id">
-                  {{ config.name }} - ${{ config.total_price }}
+                  {{ config.name }} (${{ config.total_price }})
                 </option>
               </select>
             </div>
@@ -358,7 +327,7 @@ export default {
             </div>
             
             <div class="col-12 mb-3">
-              <label class="form-label">Пожелания</label>
+              <label class="form-label">Дополнительные пожелания</label>
               <textarea v-model="form.notes" class="form-control" rows="3"></textarea>
             </div>
           </div>
@@ -375,6 +344,7 @@ export default {
       </div>
     </div>
 
+    
     <div class="card mb-3">
       <div class="card-header">
         <h6 class="mb-0">Фильтры по столбцам</h6>
@@ -386,17 +356,17 @@ export default {
                    placeholder="ID" 
                    class="form-control form-control-sm">
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <input v-model="columnFilters.user_name" 
                    placeholder="Пользователь" 
                    class="form-control form-control-sm">
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <input v-model="columnFilters.configuration_name" 
                    placeholder="Конфигурация" 
                    class="form-control form-control-sm">
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="input-group input-group-sm">
               <input v-model="columnFilters.budget_min" 
                      type="number" 
@@ -408,10 +378,8 @@ export default {
                      class="form-control">
             </div>
           </div>
-        </div>
-        <div class="row">
           <div class="col-md-3">
-            <select v-model="columnFilters.status_filter" class="form-select form-select-sm">
+            <select v-model="columnFilters.status" class="form-select form-select-sm">
               <option value="">Все статусы</option>
               <option value="pending">Ожидает</option>
               <option value="in_progress">В работе</option>
@@ -419,7 +387,9 @@ export default {
               <option value="cancelled">Отменено</option>
             </select>
           </div>
-          <div class="col-md-9 d-flex justify-content-end">
+        </div>
+        <div class="row">
+          <div class="col-md-12 d-flex justify-content-end">
             <button @click="resetFilters" class="btn btn-sm btn-outline-secondary me-2">
               Сбросить фильтры
             </button>
@@ -431,13 +401,11 @@ export default {
       </div>
     </div>
 
+    
     <div class="card">
       <div class="card-header d-flex justify-content-between">
-        <h5 class="mb-0">Список запросов ({{ filteredRequests.length }})</h5>
-        <div>
-          <button @click="loadData" class="btn btn-outline-primary btn-sm me-2">Обновить</button>
-          <button @click="loadReferenceData" class="btn btn-outline-info btn-sm">Загрузить данные</button>
-        </div>
+        <h5 class="mb-0">Список заявок ({{ filteredRequests.length }})</h5>
+        <button @click="loadData" class="btn btn-outline-primary btn-sm">Обновить</button>
       </div>
       
       <div class="card-body">
@@ -446,7 +414,7 @@ export default {
         </div>
         
         <div v-else-if="filteredRequests.length === 0" class="text-center py-4 text-muted">
-          Запросов нет
+          Заявок нет
         </div>
         
         <div v-else class="table-responsive">
@@ -458,18 +426,18 @@ export default {
                 <th>Конфигурация</th>
                 <th>Бюджет</th>
                 <th>Статус</th>
-                <th>Дата</th>
+                <th>Дата создания</th>
                 <th>Действия</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="req in filteredRequests" :key="req.id" :class="getStatusClass(req.status)">
+              <tr v-for="req in filteredRequests" :key="req.id">
                 <td>{{ req.id }}</td>
-                <td><strong>{{ req.user_name }}</strong></td>
-                <td>{{ getConfigName(req.configuration) }}</td>
+                <td>{{ req.user_name }}</td>
+                <td>{{ req.configuration_name }}</td>
                 <td class="text-success"><strong>${{ req.budget }}</strong></td>
                 <td>
-                  <span :class="['badge', getStatusBadge(req.status)]">
+                  <span :class="['badge', getStatusClass(req.status)]">
                     {{ getStatusText(req.status) }}
                   </span>
                 </td>
@@ -486,30 +454,31 @@ export default {
       </div>
     </div>
 
+    
     <div v-if="selectedRequest" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Детали запроса</h5>
+            <h5 class="modal-title">Детали заявки #{{ selectedRequest.id }}</h5>
             <button type="button" class="btn-close" @click="selectedRequest = null"></button>
           </div>
           
           <div class="modal-body">
             <div class="row">
               <div class="col-md-6">
-                <p><strong>ID:</strong> {{ selectedRequest.id }}</p>
                 <p><strong>Пользователь:</strong> {{ selectedRequest.user_name }}</p>
-                <p><strong>Конфигурация:</strong> {{ getConfigName(selectedRequest.configuration) }}</p>
+                <p><strong>Конфигурация:</strong> {{ selectedRequest.configuration_name }}</p>
                 <p><strong>Бюджет:</strong> ${{ selectedRequest.budget }}</p>
-              </div>
-              <div class="col-md-6">
                 <p><strong>Статус:</strong> 
-                  <span :class="['badge', getStatusBadge(selectedRequest.status)]">
+                  <span :class="['badge', getStatusClass(selectedRequest.status)]">
                     {{ getStatusText(selectedRequest.status) }}
                   </span>
                 </p>
+              </div>
+              <div class="col-md-6">
                 <p><strong>Дата создания:</strong> {{ formatDate(selectedRequest.created_at) }}</p>
-                <p v-if="selectedRequest.notes"><strong>Пожелания:</strong> {{ selectedRequest.notes }}</p>
+                <p><strong>Дата обновления:</strong> {{ formatDate(selectedRequest.updated_at) }}</p>
+                <p><strong>Пожелания:</strong> {{ selectedRequest.notes || '-' }}</p>
               </div>
             </div>
           </div>

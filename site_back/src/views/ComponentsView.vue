@@ -124,7 +124,6 @@ export default {
       if (file) {
         this.imageFile = file;
         
-        // Создаем preview
         const reader = new FileReader();
         reader.onload = (e) => {
           this.imagePreview = e.target.result;
@@ -138,7 +137,7 @@ export default {
       try {
         const formData = new FormData();
         
-        // Текстовые данные
+        
         formData.append('name', this.form.name);
         formData.append('component_type', this.form.component_type);
         formData.append('manufacturer', this.form.manufacturer);
@@ -146,23 +145,21 @@ export default {
         formData.append('description', this.form.description);
         formData.append('in_stock', this.form.in_stock);
         
-        // Изображение
+        
         if (this.imageFile) {
           formData.append('image', this.imageFile);
         }
 
+        
+        const headers = {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'Content-Type': 'multipart/form-data'
+        };
+
         if (this.isEditing) {
-          await axios.put(`/api/components/${this.editId}/`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
+          await axios.put(`/api/components/${this.editId}/`, formData, { headers });
         } else {
-          await axios.post('/api/components/', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
+          await axios.post('/api/components/', formData, { headers });
         }
         
         await this.loadData();
@@ -170,46 +167,135 @@ export default {
         alert('Сохранено успешно');
       } catch (error) {
         console.error('Ошибка сохранения:', error);
-        alert('Ошибка сохранения');
+        if (error.response?.status === 403) {
+          alert('Нет прав для выполнения этого действия');
+        } else if (error.response?.status === 401) {
+          alert('Требуется авторизация');
+        } else {
+          alert('Ошибка сохранения: ' + (error.response?.data?.error || error.message));
+        }
       }
       this.loading = false;
     },
 
-async exportToExcel() {
-  this.loading = true
-  try {
-    const params = {}
-    if (this.columnFilters.name) params.name = this.columnFilters.name
-    if (this.columnFilters.component_type) params.component_type = this.columnFilters.component_type
-    if (this.columnFilters.manufacturer) params.manufacturer = this.columnFilters.manufacturer
-    if (this.columnFilters.price_min) params.price_min = this.columnFilters.price_min
-    if (this.columnFilters.price_max) params.price_max = this.columnFilters.price_max
-    if (this.columnFilters.in_stock) params.in_stock = this.columnFilters.in_stock
+    async exportToExcel() {
+      this.loading = true
+      try {
+        const params = {}
+        if (this.columnFilters.name) params.name = this.columnFilters.name
+        if (this.columnFilters.component_type) params.component_type = this.columnFilters.component_type
+        if (this.columnFilters.manufacturer) params.manufacturer = this.columnFilters.manufacturer
+        if (this.columnFilters.price_min) params.price_min = this.columnFilters.price_min
+        if (this.columnFilters.price_max) params.price_max = this.columnFilters.price_max
+        if (this.columnFilters.in_stock) params.in_stock = this.columnFilters.in_stock
 
-    const response = await axios.get('/api/components/export_excel/', {
-      responseType: 'blob',
-      params: params,
-      headers: {
-        'X-CSRFToken': getCookie('csrftoken')
+        const response = await axios.get('/api/components/export_excel/', {
+          responseType: 'blob',
+          params: params,
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+          }
+        })
+        
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `components_${new Date().toISOString().split('T')[0]}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        
+        alert('Файл успешно экспортирован')
+      } catch (error) {
+        console.error('Ошибка экспорта:', error)
+        alert('Ошибка при экспорте файла')
       }
-    })
-    
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `components_${new Date().toISOString().split('T')[0]}.xlsx`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    
-    alert('Файл успешно экспортирован')
-  } catch (error) {
-    console.error('Ошибка экспорта:', error)
-    alert('Ошибка при экспорте файла')
-  }
-  this.loading = false
-}
-},
+      this.loading = false
+    },
+
+    // Добавьте недостающие методы:
+    editComponent(comp) {
+      this.isEditing = true;
+      this.editId = comp.id;
+      this.form = { 
+        name: comp.name,
+        component_type: comp.component_type,
+        manufacturer: comp.manufacturer,
+        price: comp.price,
+        description: comp.description || '',
+        in_stock: comp.in_stock
+      };
+      this.currentImage = comp.image_url;
+      this.imagePreview = null;
+      this.imageFile = null;
+    },
+
+    cancelEdit() {
+      this.resetForm();
+    },
+
+    async deleteComponent(id) {
+      if (!confirm('Удалить компонент?')) return;
+      
+      try {
+        await axios.delete(`/api/components/${id}/`, {
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+          }
+        });
+        await this.loadData();
+        alert('Удалено успешно');
+      } catch (error) {
+        console.error('Ошибка удаления:', error);
+        if (error.response?.status === 403) {
+          alert('Нет прав для удаления');
+        } else if (error.response?.status === 401) {
+          alert('Требуется авторизация');
+        } else {
+          alert('Ошибка удаления');
+        }
+      }
+    },
+
+    showDetails(comp) {
+      this.selectedComponent = comp;
+    },
+
+    showImageModal(imageUrl) {
+      this.modalImage = imageUrl;
+      this.showModal = true;
+    },
+
+    resetForm() {
+      this.isEditing = false;
+      this.editId = null;
+      this.form = {
+        name: '',
+        component_type: '',
+        manufacturer: '',
+        price: 0,
+        description: '',
+        in_stock: true
+      };
+      this.imageFile = null;
+      this.imagePreview = null;
+      this.currentImage = '';
+      if (this.$refs.fileInput) {
+        this.$refs.fileInput.value = '';
+      }
+    },
+
+    resetFilters() {
+      this.columnFilters = {
+        name: '',
+        component_type: '',
+        manufacturer: '',
+        price_min: '',
+        price_max: '',
+        in_stock: ''
+      }
+    }
+  },
   mounted() {
     this.loadData();
     this.loadReferenceData();

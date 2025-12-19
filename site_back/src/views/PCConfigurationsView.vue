@@ -111,38 +111,38 @@ export default {
     },
 
     async exportToExcel() {
-  this.loading = true
-  try {
-    const params = {}
-    if (this.columnFilters.name) params.name = this.columnFilters.name
-    if (this.columnFilters.price_min) params.price_min = this.columnFilters.price_min
-    if (this.columnFilters.price_max) params.price_max = this.columnFilters.price_max
-    if (this.columnFilters.date_from) params.date_from = this.columnFilters.date_from
-    if (this.columnFilters.date_to) params.date_to = this.columnFilters.date_to
+      this.loading = true
+      try {
+        const params = {}
+        if (this.columnFilters.name) params.name = this.columnFilters.name
+        if (this.columnFilters.price_min) params.price_min = this.columnFilters.price_min
+        if (this.columnFilters.price_max) params.price_max = this.columnFilters.price_max
+        if (this.columnFilters.date_from) params.date_from = this.columnFilters.date_from
+        if (this.columnFilters.date_to) params.date_to = this.columnFilters.date_to
 
-    const response = await axios.get('/api/configurations/export_excel/', {
-      responseType: 'blob',
-      params: params,
-      headers: {
-        'X-CSRFToken': getCookie('csrftoken')
+        const response = await axios.get('/api/configurations/export_excel/', {
+          responseType: 'blob',
+          params: params,
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+          }
+        })
+        
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `configurations_${new Date().toISOString().split('T')[0]}.xlsx`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        
+        alert('Файл успешно экспортирован')
+      } catch (error) {
+        console.error('Ошибка экспорта:', error)
+        alert('Ошибка при экспорте файла')
       }
-    })
-    
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `configurations_${new Date().toISOString().split('T')[0]}.xlsx`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    
-    alert('Файл успешно экспортирован')
-  } catch (error) {
-    console.error('Ошибка экспорта:', error)
-    alert('Ошибка при экспорте файла')
-  }
-  this.loading = false
-},
+      this.loading = false
+    },
 
     getFieldName(typeName) {
       const map = {
@@ -183,10 +183,15 @@ export default {
     async saveConfig() {
       this.loading = true;
       try {
+        const headers = {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'Content-Type': 'application/json'
+        };
+
         if (this.isEditing) {
-          await axios.put(`/api/configurations/${this.editId}/`, this.form);
+          await axios.put(`/api/configurations/${this.editId}/`, this.form, { headers });
         } else {
-          await axios.post('/api/configurations/', this.form);
+          await axios.post('/api/configurations/', this.form, { headers });
         }
         
         await this.loadData();
@@ -194,7 +199,13 @@ export default {
         alert('Сохранено успешно');
       } catch (error) {
         console.error('Ошибка сохранения:', error);
-        alert('Ошибка сохранения');
+        if (error.response?.status === 403) {
+          alert('Нет прав для выполнения этого действия');
+        } else if (error.response?.status === 401) {
+          alert('Требуется авторизация');
+        } else {
+          alert('Ошибка сохранения: ' + (error.response?.data?.error || error.message));
+        }
       }
       this.loading = false;
     },
@@ -202,7 +213,17 @@ export default {
     editConfig(config) {
       this.isEditing = true;
       this.editId = config.id;
-      this.form = { ...config };
+      this.form = { 
+        name: config.name,
+        description: config.description || '',
+        cpu: config.cpu,
+        gpu: config.gpu,
+        motherboard: config.motherboard,
+        ram: config.ram,
+        storage: config.storage,
+        power_supply: config.power_supply,
+        case: config.case
+      };
     },
 
     cancelEdit() {
@@ -213,11 +234,22 @@ export default {
       if (!confirm('Удалить конфигурацию?')) return;
       
       try {
-        await axios.delete(`/api/configurations/${id}/`);
-        this.configs = this.configs.filter(c => c.id !== id);
+        await axios.delete(`/api/configurations/${id}/`, {
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+          }
+        });
+        await this.loadData();
+        alert('Удалено успешно');
       } catch (error) {
         console.error('Ошибка удаления:', error);
-        alert('Ошибка удаления');
+        if (error.response?.status === 403) {
+          alert('Нет прав для удаления');
+        } else if (error.response?.status === 401) {
+          alert('Требуется авторизация');
+        } else {
+          alert('Ошибка удаления');
+        }
       }
     },
 

@@ -1,4 +1,156 @@
-<!-- site_back/src/views/ArraysView.vue -->
+
+<script>
+export default {
+  name: 'ArraysView',
+  data() {
+    return {
+      
+      components: [
+        { id: 1, name: 'Intel Core i5', price: 180, type: 'cpu' },
+        { id: 2, name: 'AMD Ryzen 7', price: 250, type: 'cpu' },
+        { id: 3, name: 'NVIDIA RTX 4060', price: 350, type: 'gpu' },
+        { id: 4, name: 'AMD RX 7600', price: 300, type: 'gpu' },
+        { id: 5, name: 'Kingston 16GB', price: 40, type: 'ram' },
+        { id: 6, name: 'Samsung 1TB SSD', price: 60, type: 'storage' }
+      ],
+      
+      newComponent: {
+        name: '',
+        price: 0,
+        type: ''
+      },
+      
+      selectedComponents: [],
+      
+      searchQuery: '',
+      filterType: '',
+      sortAscending: true,
+      
+      editingComponent: null,
+      
+      nextId: 7
+    }
+  },
+  computed: {
+   
+    filteredComponents() {
+      let filtered = this.components;
+      
+      
+      if (this.searchQuery) {
+        filtered = filtered.filter(component => 
+          component.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+        );
+      }
+      
+     
+      if (this.filterType) {
+        filtered = filtered.filter(component => component.type === this.filterType);
+      }
+      
+      
+      filtered = [...filtered].sort((a, b) => {
+        return this.sortAscending ? a.price - b.price : b.price - a.price;
+      });
+      
+      return filtered;
+    },
+    
+   
+    totalSelectedPrice() {
+      return this.selectedComponents.reduce((total, id) => {
+        const component = this.getComponentById(id);
+        return total + (component?.price || 0);
+      }, 0);
+    },
+    
+    
+    averagePrice() {
+      if (this.selectedComponents.length === 0) return 0;
+      return Math.round(this.totalSelectedPrice / this.selectedComponents.length);
+    }
+  },
+  methods: {
+    // Форматирование цены в доллары
+    formatPrice(price) {
+      if (!price) return '$0';
+      return `$${price}`;
+    },
+
+    // Добавление компонента в массив
+    addComponent() {
+      const component = {
+        id: this.nextId++,
+        ...this.newComponent
+      };
+      this.components.push(component);
+      this.newComponent = { name: '', price: 0, type: '' };
+    },
+    
+    // Удаление компонента из массива
+    removeComponent(id) {
+      this.components = this.components.filter(component => component.id !== id);
+      this.selectedComponents = this.selectedComponents.filter(selectedId => selectedId !== id);
+    },
+    
+    // Редактирование компонента
+    editComponent(component) {
+      this.editingComponent = { ...component };
+    },
+    
+    // Обновление компонента
+    updateComponent() {
+      const index = this.components.findIndex(c => c.id === this.editingComponent.id);
+      if (index !== -1) {
+        this.components.splice(index, 1, this.editingComponent);
+      }
+      this.cancelEdit();
+    },
+    
+    cancelEdit() {
+      this.editingComponent = null;
+    },
+    
+    // Работа с выбранными компонентами
+    toggleSelection(id) {
+      const index = this.selectedComponents.indexOf(id);
+      if (index === -1) {
+        this.selectedComponents.push(id);
+      } else {
+        this.selectedComponents.splice(index, 1);
+      }
+    },
+    
+    removeFromSelection(id) {
+      this.selectedComponents = this.selectedComponents.filter(selectedId => selectedId !== id);
+    },
+    
+    clearSelection() {
+      this.selectedComponents = [];
+    },
+    
+    // Вспомогательные методы
+    getComponentById(id) {
+      return this.components.find(component => component.id === id);
+    },
+    
+    getTypeName(type) {
+      const types = {
+        cpu: 'Процессор',
+        gpu: 'Видеокарта',
+        ram: 'Оперативная память',
+        storage: 'Накопитель'
+      };
+      return types[type] || 'Неизвестный тип';
+    },
+    
+    sortByPrice() {
+      this.sortAscending = !this.sortAscending;
+    }
+  }
+}
+</script>
+
 <template>
   <div class="arrays-view">
     <h1>📋 Работа с массивами</h1>
@@ -128,157 +280,6 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'ArraysView',
-  data() {
-    return {
-      // Массив компонентов
-      components: [
-        { id: 1, name: 'Intel Core i5', price: 180, type: 'cpu' },
-        { id: 2, name: 'AMD Ryzen 7', price: 250, type: 'cpu' },
-        { id: 3, name: 'NVIDIA RTX 4060', price: 350, type: 'gpu' },
-        { id: 4, name: 'AMD RX 7600', price: 300, type: 'gpu' },
-        { id: 5, name: 'Kingston 16GB', price: 40, type: 'ram' },
-        { id: 6, name: 'Samsung 1TB SSD', price: 60, type: 'storage' }
-      ],
-      // Новый компонент для формы
-      newComponent: {
-        name: '',
-        price: 0,
-        type: ''
-      },
-      // Выбранные компоненты
-      selectedComponents: [],
-      // Поиск и фильтры
-      searchQuery: '',
-      filterType: '',
-      sortAscending: true,
-      // Редактирование
-      editingComponent: null,
-      // Счетчик для ID
-      nextId: 7
-    }
-  },
-  computed: {
-    // Фильтрованный и отсортированный массив
-    filteredComponents() {
-      let filtered = this.components;
-      
-      // Фильтрация по поиску
-      if (this.searchQuery) {
-        filtered = filtered.filter(component => 
-          component.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-        );
-      }
-      
-      // Фильтрация по типу
-      if (this.filterType) {
-        filtered = filtered.filter(component => component.type === this.filterType);
-      }
-      
-      // Сортировка по цене
-      filtered = [...filtered].sort((a, b) => {
-        return this.sortAscending ? a.price - b.price : b.price - a.price;
-      });
-      
-      return filtered;
-    },
-    
-    // Общая стоимость выбранных компонентов
-    totalSelectedPrice() {
-      return this.selectedComponents.reduce((total, id) => {
-        const component = this.getComponentById(id);
-        return total + (component?.price || 0);
-      }, 0);
-    },
-    
-    // Средняя цена выбранных компонентов
-    averagePrice() {
-      if (this.selectedComponents.length === 0) return 0;
-      return Math.round(this.totalSelectedPrice / this.selectedComponents.length);
-    }
-  },
-  methods: {
-    // Форматирование цены в доллары
-    formatPrice(price) {
-      if (!price) return '$0';
-      return `$${price}`;
-    },
-
-    // Добавление компонента в массив
-    addComponent() {
-      const component = {
-        id: this.nextId++,
-        ...this.newComponent
-      };
-      this.components.push(component);
-      this.newComponent = { name: '', price: 0, type: '' };
-    },
-    
-    // Удаление компонента из массива
-    removeComponent(id) {
-      this.components = this.components.filter(component => component.id !== id);
-      this.selectedComponents = this.selectedComponents.filter(selectedId => selectedId !== id);
-    },
-    
-    // Редактирование компонента
-    editComponent(component) {
-      this.editingComponent = { ...component };
-    },
-    
-    // Обновление компонента
-    updateComponent() {
-      const index = this.components.findIndex(c => c.id === this.editingComponent.id);
-      if (index !== -1) {
-        this.components.splice(index, 1, this.editingComponent);
-      }
-      this.cancelEdit();
-    },
-    
-    cancelEdit() {
-      this.editingComponent = null;
-    },
-    
-    // Работа с выбранными компонентами
-    toggleSelection(id) {
-      const index = this.selectedComponents.indexOf(id);
-      if (index === -1) {
-        this.selectedComponents.push(id);
-      } else {
-        this.selectedComponents.splice(index, 1);
-      }
-    },
-    
-    removeFromSelection(id) {
-      this.selectedComponents = this.selectedComponents.filter(selectedId => selectedId !== id);
-    },
-    
-    clearSelection() {
-      this.selectedComponents = [];
-    },
-    
-    // Вспомогательные методы
-    getComponentById(id) {
-      return this.components.find(component => component.id === id);
-    },
-    
-    getTypeName(type) {
-      const types = {
-        cpu: 'Процессор',
-        gpu: 'Видеокарта',
-        ram: 'Оперативная память',
-        storage: 'Накопитель'
-      };
-      return types[type] || 'Неизвестный тип';
-    },
-    
-    sortByPrice() {
-      this.sortAscending = !this.sortAscending;
-    }
-  }
-}
-</script>
 
 <style scoped>
 .arrays-view {

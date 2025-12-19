@@ -1,4 +1,4 @@
-# configurator/api.py
+
 from rest_framework import generics, permissions, viewsets
 from django.contrib.auth.models import User
 from .models import ComponentType, Manufacturer, Component, PCConfiguration, BuildRequest
@@ -17,7 +17,7 @@ from django.views.decorators.http import require_http_methods
 import json
 from django.contrib.auth import authenticate, login, logout
 
-# ================ VIEWSETS ================
+
 class ComponentTypeViewSet(viewsets.ModelViewSet):
     queryset = ComponentType.objects.all()
     serializer_class = ComponentTypeSerializer
@@ -49,7 +49,7 @@ class ComponentViewSet(viewsets.ModelViewSet):
     def export_excel(self, request):
         """Экспорт компонентов в Excel с фильтрацией"""
         try:
-            # Применяем фильтры
+           
             filters = Q()
             
             name_filter = request.query_params.get('name')
@@ -76,10 +76,10 @@ class ComponentViewSet(viewsets.ModelViewSet):
             if in_stock_filter:
                 filters &= Q(in_stock=(in_stock_filter.lower() == 'true'))
             
-            # Получаем данные с фильтрами
+            
             components = Component.objects.filter(filters).select_related('component_type', 'manufacturer')
             
-            # Подготавливаем данные для Excel
+            
             data = []
             for comp in components:
                 data.append({
@@ -93,16 +93,16 @@ class ComponentViewSet(viewsets.ModelViewSet):
                     'Дата создания': comp.created_at.strftime('%Y-%m-%d %H:%M') if comp.created_at else ''
                 })
             
-            # Создаем DataFrame
+           
             df = pd.DataFrame(data)
             
-            # Создаем Excel файл в памяти
+            
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name='Компоненты')
                 worksheet = writer.sheets['Компоненты']
                 
-                # Настраиваем ширину колонок
+                
                 for column in worksheet.columns:
                     max_length = 0
                     column_letter = column[0].column_letter
@@ -115,7 +115,7 @@ class ComponentViewSet(viewsets.ModelViewSet):
                     adjusted_width = min(max_length + 2, 50)
                     worksheet.column_dimensions[column_letter].width = adjusted_width
             
-            # Формируем ответ
+            
             output.seek(0)
             response = HttpResponse(
                 output.read(),
@@ -140,7 +140,7 @@ class PCConfigurationViewSet(viewsets.ModelViewSet):
     def export_excel(self, request):
         """Экспорт конфигураций в Excel с фильтрацией"""
         try:
-            # Применяем фильтры
+            
             filters = Q()
             
             name_filter = request.query_params.get('name')
@@ -163,12 +163,12 @@ class PCConfigurationViewSet(viewsets.ModelViewSet):
             if date_to:
                 filters &= Q(created_at__lte=date_to)
             
-            # Получаем данные с фильтрами
+            
             configs = PCConfiguration.objects.filter(filters).select_related(
                 'cpu', 'gpu', 'motherboard', 'ram', 'storage', 'power_supply', 'case'
             )
             
-            # Подготавливаем данные для Excel
+            
             data = []
             for config in configs:
                 data.append({
@@ -186,16 +186,16 @@ class PCConfigurationViewSet(viewsets.ModelViewSet):
                     'Дата создания': config.created_at.strftime('%Y-%m-%d %H:%M') if config.created_at else ''
                 })
             
-            # Создаем DataFrame
+           
             df = pd.DataFrame(data)
             
-            # Создаем Excel файл в памяти
+            
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name='Конфигурации')
                 worksheet = writer.sheets['Конфигурации']
                 
-                # Настраиваем ширину колонок
+                
                 for column in worksheet.columns:
                     max_length = 0
                     column_letter = column[0].column_letter
@@ -208,7 +208,7 @@ class PCConfigurationViewSet(viewsets.ModelViewSet):
                     adjusted_width = min(max_length + 2, 50)
                     worksheet.column_dimensions[column_letter].width = adjusted_width
             
-            # Формируем ответ
+           
             output.seek(0)
             response = HttpResponse(
                 output.read(),
@@ -244,7 +244,7 @@ class BuildRequestViewSet(viewsets.ModelViewSet):
     def export_excel(self, request):
         """Экспорт заявок в Excel с фильтрацией"""
         try:
-            # Базовые фильтры из get_queryset
+            
             filters = Q()
             
             if not request.user.is_superuser:
@@ -254,7 +254,7 @@ class BuildRequestViewSet(viewsets.ModelViewSet):
                 if user_id:
                     filters &= Q(user_id=user_id)
             
-            # Дополнительные фильтры
+            
             id_filter = request.query_params.get('id')
             if id_filter:
                 filters &= Q(id__icontains=id_filter)
@@ -279,10 +279,10 @@ class BuildRequestViewSet(viewsets.ModelViewSet):
             if status_filter:
                 filters &= Q(status=status_filter)
             
-            # Получаем данные с фильтрами
+           
             requests = BuildRequest.objects.filter(filters).select_related('user', 'configuration')
             
-            # Подготавливаем данные для Excel
+            
             data = []
             for req in requests:
                 data.append({
@@ -296,16 +296,16 @@ class BuildRequestViewSet(viewsets.ModelViewSet):
                     'Дата обновления': req.updated_at.strftime('%Y-%m-%d %H:%M') if req.updated_at else ''
                 })
             
-            # Создаем DataFrame
+           
             df = pd.DataFrame(data)
             
-            # Создаем Excel файл в памяти
+           
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name='Заявки')
                 worksheet = writer.sheets['Заявки']
                 
-                # Настраиваем ширину колонок
+                
                 for column in worksheet.columns:
                     max_length = 0
                     column_letter = column[0].column_letter
@@ -318,7 +318,7 @@ class BuildRequestViewSet(viewsets.ModelViewSet):
                     adjusted_width = min(max_length + 2, 50)
                     worksheet.column_dimensions[column_letter].width = adjusted_width
             
-            # Формируем ответ
+            
             output.seek(0)
             response = HttpResponse(
                 output.read(),
@@ -330,7 +330,7 @@ class BuildRequestViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-# ================ AUTH VIEWS ================
+
 @ensure_csrf_cookie
 @require_http_methods(["POST"])
 def login_view(request):

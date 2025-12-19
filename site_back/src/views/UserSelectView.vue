@@ -1,33 +1,3 @@
-<!-- site_back/src/views/UserSelectView.vue -->
-<template>
-  <div class="login-page">
-    <div class="login-box">
-      <h2>Выберите пользователя</h2>
-      
-      <div class="user-list">
-        <div 
-          v-for="user in users" 
-          :key="user.id"
-          class="user-item"
-          @click="login(user)"
-        >
-          <div class="user-info">
-            <div class="user-name">{{ user.name }}</div>
-            <div class="user-role">{{ user.role }}</div>
-          </div>
-          <div class="user-desc">{{ user.desc }}</div>
-        </div>
-      </div>
-
-      <div class="password-info">
-        <p><strong>Пароли:</strong></p>
-        <p>ZeneZ: admin123</p>
-        <p>vlad: vlad123</p>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script>
 import axios from 'axios';
 
@@ -87,6 +57,36 @@ export default {
   }
 }
 </script>
+
+<template>
+  <div class="login-page">
+    <div class="login-box">
+      <h2>Выберите пользователя</h2>
+      
+      <div class="user-list">
+        <div 
+          v-for="user in users" 
+          :key="user.id"
+          class="user-item"
+          @click="login(user)"
+        >
+          <div class="user-info">
+            <div class="user-name">{{ user.name }}</div>
+            <div class="user-role">{{ user.role }}</div>
+          </div>
+          <div class="user-desc">{{ user.desc }}</div>
+        </div>
+      </div>
+
+      <div class="password-info">
+        <p><strong>Пароли:</strong></p>
+        <p>ZeneZ: admin123</p>
+        <p>vlad: vlad123</p>
+      </div>
+    </div>
+  </div>
+</template>
+
 
 <style>
 .login-page {

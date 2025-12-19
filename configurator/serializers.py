@@ -1,4 +1,4 @@
-# configurator/serializers.py
+
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import ComponentType, Manufacturer, Component, PCConfiguration, BuildRequest
@@ -69,8 +69,7 @@ class BuildRequestSerializer(serializers.ModelSerializer):
         extra_kwargs = {'user': {'required': False}}
     
     def create(self, validated_data):
-        # Если пользователь не передан (например, обычный юзер),
-        # то берем из request.user
+      
         if 'user' not in validated_data and 'request' in self.context:
             validated_data['user'] = self.context['request'].user
         return super().create(validated_data)

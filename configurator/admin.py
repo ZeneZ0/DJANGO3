@@ -1,4 +1,4 @@
-# configurator/admin.py
+
 from django.contrib import admin
 from .models import ComponentType, Manufacturer, Component, PCConfiguration, BuildRequest
 
@@ -40,10 +40,10 @@ class PCConfigurationAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
     ordering = ('-created_at',)
     
-    # Поля только для чтения в форме редактирования
+    
     readonly_fields = ('total_price', 'created_at')
     
-    # Группировка полей в форме
+    
     fieldsets = (
         ('Основная информация', {
             'fields': ('name', 'description', 'total_price')

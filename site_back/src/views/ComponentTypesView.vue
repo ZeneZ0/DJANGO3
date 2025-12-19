@@ -1,81 +1,3 @@
-<!-- site_back/src/views/ComponentTypesView.vue -->
-<template>
-  <div class="container mt-4">
-    <h1 class="mb-4">Управление типами компонентов</h1>
-
-    <!-- Форма -->
-    <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Добавить' }} тип</h5>
-      </div>
-      <div class="card-body">
-        <form @submit.prevent="saveType">
-          <div class="mb-3">
-            <label class="form-label">Название *</label>
-            <input v-model="form.name" type="text" class="form-control" required>
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label">Описание</label>
-            <textarea v-model="form.description" class="form-control" rows="3"></textarea>
-          </div>
-          
-          <div>
-            <button type="submit" class="btn btn-success" :disabled="loading">
-              {{ isEditing ? 'Сохранить' : 'Добавить' }}
-            </button>
-            <button type="button" v-if="isEditing" @click="cancelEdit" class="btn btn-secondary ms-2">
-              Отмена
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Список типов -->
-    <div class="card">
-      <div class="card-header d-flex justify-content-between">
-        <h5 class="mb-0">Список типов ({{ types.length }})</h5>
-        <button @click="loadData" class="btn btn-outline-primary btn-sm">Обновить</button>
-      </div>
-      
-      <div class="card-body">
-        <div v-if="loading" class="text-center py-3">
-          <div class="spinner-border text-primary"></div>
-        </div>
-        
-        <div v-else-if="types.length === 0" class="text-center py-4 text-muted">
-          Типов нет
-        </div>
-        
-        <div v-else class="table-responsive">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Название</th>
-                <th>Описание</th>
-                <th>Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="type in types" :key="type.id">
-                <td>{{ type.id }}</td>
-                <td><strong>{{ type.name }}</strong></td>
-                <td>{{ type.description || '-' }}</td>
-                <td>
-                  <button @click="editType(type)" class="btn btn-warning btn-sm me-1">Изменить</button>
-                  <button @click="deleteType(type.id)" class="btn btn-danger btn-sm">Удалить</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script>
 import axios from 'axios';
 
@@ -161,6 +83,84 @@ export default {
   }
 }
 </script>
+
+<template>
+  <div class="container mt-4">
+    <h1 class="mb-4">Управление типами компонентов</h1>
+
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Добавить' }} тип</h5>
+      </div>
+      <div class="card-body">
+        <form @submit.prevent="saveType">
+          <div class="mb-3">
+            <label class="form-label">Название *</label>
+            <input v-model="form.name" type="text" class="form-control" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Описание</label>
+            <textarea v-model="form.description" class="form-control" rows="3"></textarea>
+          </div>
+          
+          <div>
+            <button type="submit" class="btn btn-success" :disabled="loading">
+              {{ isEditing ? 'Сохранить' : 'Добавить' }}
+            </button>
+            <button type="button" v-if="isEditing" @click="cancelEdit" class="btn btn-secondary ms-2">
+              Отмена
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Список типов -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <h5 class="mb-0">Список типов ({{ types.length }})</h5>
+        <button @click="loadData" class="btn btn-outline-primary btn-sm">Обновить</button>
+      </div>
+      
+      <div class="card-body">
+        <div v-if="loading" class="text-center py-3">
+          <div class="spinner-border text-primary"></div>
+        </div>
+        
+        <div v-else-if="types.length === 0" class="text-center py-4 text-muted">
+          Типов нет
+        </div>
+        
+        <div v-else class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="type in types" :key="type.id">
+                <td>{{ type.id }}</td>
+                <td><strong>{{ type.name }}</strong></td>
+                <td>{{ type.description || '-' }}</td>
+                <td>
+                  <button @click="editType(type)" class="btn btn-warning btn-sm me-1">Изменить</button>
+                  <button @click="deleteType(type.id)" class="btn btn-danger btn-sm">Удалить</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+
 
 <style scoped>
 .table-responsive {

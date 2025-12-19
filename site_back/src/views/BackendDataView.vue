@@ -1,179 +1,3 @@
-<!-- site_back/src/views/BackendDataView.vue -->
-<template>
-  <div class="backend-data">
-    <h1>Данные с сервера</h1>
-    
-    <div class="alert alert-info mb-3">
-      Цены в долларах ($)
-    </div>
-
-    <div class="controls mb-4">
-      <button @click="loadAllData" class="btn btn-primary me-2" :disabled="loading">
-        Загрузить все
-      </button>
-      
-      <div class="btn-group">
-        <button 
-          v-for="endpoint in endpoints" 
-          :key="endpoint.key"
-          @click="loadSpecificData(endpoint.key)"
-          :class="['btn btn-outline-secondary', { active: activeEndpoint === endpoint.key }]"
-          :disabled="loading"
-        >
-          {{ endpoint.name }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Компоненты -->
-    <div v-if="activeData.components" class="mb-4">
-      <h3>Компоненты</h3>
-      
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <input v-model="componentSearch" placeholder="Поиск..." class="form-control">
-        </div>
-        <div class="col-md-6">
-          <select v-model="componentTypeFilter" class="form-select">
-            <option value="">Все типы</option>
-            <option v-for="type in componentTypes" :key="type.id" :value="type.id">
-              {{ type.name }}
-            </option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="row">
-        <div 
-          v-for="item in filteredComponents" 
-          :key="item.id" 
-          class="col-md-4 mb-3"
-        >
-          <div class="card h-100" :class="{ 'border-danger': !item.in_stock }">
-            <div class="card-body">
-              <h5 class="card-title">{{ item.name }}</h5>
-              <p class="card-text">
-                Тип: <span class="badge bg-primary">{{ getComponentTypeName(item.component_type) }}</span><br>
-                Производитель: <span class="badge bg-info">{{ getManufacturerName(item.manufacturer) }}</span><br>
-                Цена: <strong class="text-success">${{ item.price }}</strong>
-              </p>
-              <p :class="item.in_stock ? 'text-success' : 'text-danger'">
-                {{ item.in_stock ? 'В наличии' : 'Нет в наличии' }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Производители -->
-    <div v-if="activeData.manufacturers" class="mb-4">
-      <h3>Производители</h3>
-      <div class="row">
-        <div v-for="item in activeData.manufacturers" :key="item.id" class="col-md-4 mb-3">
-          <div class="card h-100">
-            <div class="card-body">
-              <h5 class="card-title">{{ item.name }}</h5>
-              <p class="card-text">
-                Страна: <span class="badge bg-info">{{ item.country }}</span><br>
-                Сайт: <a v-if="item.website" :href="item.website" target="_blank">Перейти</a>
-                <span v-else class="text-muted">-</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Типы компонентов -->
-    <div v-if="activeData.componentTypes" class="mb-4">
-      <h3>Типы компонентов</h3>
-      <div class="row">
-        <div v-for="item in activeData.componentTypes" :key="item.id" class="col-md-4 mb-3">
-          <div class="card h-100">
-            <div class="card-body">
-              <h5 class="card-title">{{ item.name }}</h5>
-              <p class="card-text">{{ item.description || '-' }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Конфигурации -->
-    <div v-if="activeData.configurations" class="mb-4">
-      <h3>Конфигурации ПК</h3>
-      <div class="row">
-        <div v-for="item in activeData.configurations" :key="item.id" class="col-md-6 mb-3">
-          <div class="card h-100">
-            <div class="card-body">
-              <h5 class="card-title">{{ item.name }}</h5>
-              <p class="card-text">{{ item.description || '-' }}</p>
-              <p class="fw-bold text-success">Общая стоимость: ${{ item.total_price }}</p>
-              <div class="small">
-                <p class="mb-1"><strong>Компоненты:</strong></p>
-                <ul class="mb-0">
-                  <li>Процессор: {{ getComponentName(item.cpu) }}</li>
-                  <li>Видеокарта: {{ getComponentName(item.gpu) }}</li>
-                  <li>Материнская плата: {{ getComponentName(item.motherboard) }}</li>
-                  <li>Память: {{ getComponentName(item.ram) }}</li>
-                  <li>Накопитель: {{ getComponentName(item.storage) }}</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Статистика -->
-    <div v-if="showStats" class="mb-4">
-      <h3>Статистика</h3>
-      <div class="row">
-        <div class="col-md-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <h5>Типы</h5>
-              <h2>{{ stats.componentTypesCount }}</h2>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <h5>Производители</h5>
-              <h2>{{ stats.manufacturersCount }}</h2>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <h5>Компоненты</h5>
-              <h2>{{ stats.componentsCount }}</h2>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card">
-            <div class="card-body text-center">
-              <h5>Конфигурации</h5>
-              <h2>{{ stats.configurationsCount }}</h2>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Ошибка -->
-    <div v-if="error" class="alert alert-danger">
-      <h5>Ошибка загрузки данных</h5>
-      <p>{{ error }}</p>
-      <p class="mb-0">Убедитесь, что сервер Django запущен</p>
-    </div>
-  </div>
-</template>
-
 <script>
 import axios from 'axios';
 
@@ -339,6 +163,183 @@ export default {
   }
 }
 </script>
+
+<template>
+  <div class="backend-data">
+    <h1>Данные с сервера</h1>
+    
+    <div class="alert alert-info mb-3">
+      Цены в долларах ($)
+    </div>
+
+    <div class="controls mb-4">
+      <button @click="loadAllData" class="btn btn-primary me-2" :disabled="loading">
+        Загрузить все
+      </button>
+      
+      <div class="btn-group">
+        <button 
+          v-for="endpoint in endpoints" 
+          :key="endpoint.key"
+          @click="loadSpecificData(endpoint.key)"
+          :class="['btn btn-outline-secondary', { active: activeEndpoint === endpoint.key }]"
+          :disabled="loading"
+        >
+          {{ endpoint.name }}
+        </button>
+      </div>
+    </div>
+
+    
+    <div v-if="activeData.components" class="mb-4">
+      <h3>Компоненты</h3>
+      
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <input v-model="componentSearch" placeholder="Поиск..." class="form-control">
+        </div>
+        <div class="col-md-6">
+          <select v-model="componentTypeFilter" class="form-select">
+            <option value="">Все типы</option>
+            <option v-for="type in componentTypes" :key="type.id" :value="type.id">
+              {{ type.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div 
+          v-for="item in filteredComponents" 
+          :key="item.id" 
+          class="col-md-4 mb-3"
+        >
+          <div class="card h-100" :class="{ 'border-danger': !item.in_stock }">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">
+                Тип: <span class="badge bg-primary">{{ getComponentTypeName(item.component_type) }}</span><br>
+                Производитель: <span class="badge bg-info">{{ getManufacturerName(item.manufacturer) }}</span><br>
+                Цена: <strong class="text-success">${{ item.price }}</strong>
+              </p>
+              <p :class="item.in_stock ? 'text-success' : 'text-danger'">
+                {{ item.in_stock ? 'В наличии' : 'Нет в наличии' }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   
+    <div v-if="activeData.manufacturers" class="mb-4">
+      <h3>Производители</h3>
+      <div class="row">
+        <div v-for="item in activeData.manufacturers" :key="item.id" class="col-md-4 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">
+                Страна: <span class="badge bg-info">{{ item.country }}</span><br>
+                Сайт: <a v-if="item.website" :href="item.website" target="_blank">Перейти</a>
+                <span v-else class="text-muted">-</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   
+    <div v-if="activeData.componentTypes" class="mb-4">
+      <h3>Типы компонентов</h3>
+      <div class="row">
+        <div v-for="item in activeData.componentTypes" :key="item.id" class="col-md-4 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">{{ item.description || '-' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   
+    <div v-if="activeData.configurations" class="mb-4">
+      <h3>Конфигурации ПК</h3>
+      <div class="row">
+        <div v-for="item in activeData.configurations" :key="item.id" class="col-md-6 mb-3">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">{{ item.name }}</h5>
+              <p class="card-text">{{ item.description || '-' }}</p>
+              <p class="fw-bold text-success">Общая стоимость: ${{ item.total_price }}</p>
+              <div class="small">
+                <p class="mb-1"><strong>Компоненты:</strong></p>
+                <ul class="mb-0">
+                  <li>Процессор: {{ getComponentName(item.cpu) }}</li>
+                  <li>Видеокарта: {{ getComponentName(item.gpu) }}</li>
+                  <li>Материнская плата: {{ getComponentName(item.motherboard) }}</li>
+                  <li>Память: {{ getComponentName(item.ram) }}</li>
+                  <li>Накопитель: {{ getComponentName(item.storage) }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+    <div v-if="showStats" class="mb-4">
+      <h3>Статистика</h3>
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5>Типы</h5>
+              <h2>{{ stats.componentTypesCount }}</h2>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5>Производители</h5>
+              <h2>{{ stats.manufacturersCount }}</h2>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5>Компоненты</h5>
+              <h2>{{ stats.componentsCount }}</h2>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5>Конфигурации</h5>
+              <h2>{{ stats.configurationsCount }}</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   
+    <div v-if="error" class="alert alert-danger">
+      <h5>Ошибка загрузки данных</h5>
+      <p>{{ error }}</p>
+      <p class="mb-0">Убедитесь, что сервер Django запущен</p>
+    </div>
+  </div>
+</template>
+
+
 
 <style scoped>
 .backend-data {

@@ -1,10 +1,10 @@
-# configurator/tests.py
+
 import pytest
 from django.contrib.auth.models import User
 from .models import ComponentType, Manufacturer, Component, PCConfiguration, BuildRequest
 from rest_framework.test import APIClient
 
-# Тесты для ComponentType
+
 @pytest.mark.django_db
 class TestComponentTypeCRUD:
     
@@ -62,7 +62,7 @@ class TestComponentTypeCRUD:
         assert response.status_code == 204
         assert ComponentType.objects.count() == 0
 
-# Тесты для Manufacturer
+
 @pytest.mark.django_db
 class TestManufacturerCRUD:
     
@@ -119,7 +119,7 @@ class TestManufacturerCRUD:
         assert response.status_code == 204
         assert Manufacturer.objects.count() == 0
 
-# Тесты для Component
+
 @pytest.mark.django_db
 class TestComponentCRUD:
     
@@ -215,7 +215,7 @@ class TestComponentCRUD:
         assert response.status_code == 204
         assert Component.objects.count() == 0
 
-# Тесты для PCConfiguration
+
 @pytest.mark.django_db
 class TestPCConfigurationCRUD:
     
@@ -249,7 +249,7 @@ class TestPCConfigurationCRUD:
         assert PCConfiguration.objects.count() == 1
         configuration = PCConfiguration.objects.get()
         assert configuration.name == 'Игровой ПК'
-        assert configuration.total_price == 1400.00  # 7 компонентов × 200.00
+        assert configuration.total_price == 1400.00 
     
     def test_read_configuration_list(self):
         """Тест на чтение списка конфигураций"""
@@ -348,7 +348,7 @@ class TestPCConfigurationCRUD:
         assert response.status_code == 204
         assert PCConfiguration.objects.count() == 0
 
-# Тесты для BuildRequest
+
 @pytest.mark.django_db
 @pytest.mark.django_db
 class TestBuildRequestCRUD:

@@ -1,4 +1,4 @@
-// site_back/src/router/index.js
+
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
@@ -33,7 +33,7 @@ const routes = [
     name: 'backend-data',
     component: () => import('../views/BackendDataView.vue')
   },
-  // Management Routes
+  
   {
     path: '/manage/component-types',
     name: 'component-types',
@@ -60,7 +60,7 @@ const routes = [
     component: () => import('../views/BuildRequestsView.vue')
   },
 
-  // Redirects for legacy/broken paths
+  
   { path: '/components', redirect: '/manage/components' },
   { path: '/configs', redirect: '/manage/configurations' },
   { path: '/requests', redirect: '/manage/build-requests' },

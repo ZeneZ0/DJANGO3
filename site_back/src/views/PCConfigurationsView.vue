@@ -1,192 +1,3 @@
-<!-- site_back/src/views/PCConfigurationsView.vue -->
-<template>
-  <div class="container mt-4">
-    <h1 class="mb-4">Управление конфигурациями ПК</h1>
-    
-    <div class="alert alert-info mb-3">
-      Цены в долларах ($)
-    </div>
-
-    <!-- Форма -->
-    <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Добавить' }} конфигурацию</h5>
-      </div>
-      <div class="card-body">
-        <form @submit.prevent="saveConfig">
-          <div class="mb-3">
-            <label class="form-label">Название:</label>
-            <input v-model="form.name" type="text" class="form-control" required>
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label">Описание:</label>
-            <textarea v-model="form.description" class="form-control" rows="2"></textarea>
-          </div>
-
-          <h5>Выбор компонентов</h5>
-          
-          <div class="row">
-            <div class="col-md-6 mb-3" v-for="type in componentTypes" :key="type.id">
-              <label class="form-label">{{ type.name }}:</label>
-              <select v-model="form[getFieldName(type.name)]" class="form-select" required>
-                <option value="">Выберите</option>
-                <option 
-                  v-for="comp in getComponents(type.id)" 
-                  :key="comp.id" 
-                  :value="comp.id"
-                >
-                  {{ comp.name }} (${{ comp.price }})
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="alert alert-light mb-3">
-            <strong>Общая стоимость: ${{ calculateTotal() }}</strong>
-          </div>
-
-          <div>
-            <button type="submit" class="btn btn-success" :disabled="loading">
-              {{ isEditing ? 'Сохранить' : 'Добавить' }}
-            </button>
-            <button type="button" v-if="isEditing" @click="cancelEdit" class="btn btn-secondary ms-2">
-              Отмена
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Фильтры по столбцам -->
-    <div class="card mb-3">
-      <div class="card-header">
-        <h6 class="mb-0">Фильтры по столбцам</h6>
-      </div>
-      <div class="card-body">
-        <div class="row mb-2">
-          <div class="col-md-4">
-            <input v-model="columnFilters.name" 
-                   placeholder="Название" 
-                   class="form-control form-control-sm">
-          </div>
-          <div class="col-md-4">
-            <div class="input-group input-group-sm">
-              <input v-model="columnFilters.price_min" 
-                     type="number" 
-                     placeholder="Стоимость от" 
-                     class="form-control">
-              <input v-model="columnFilters.price_max" 
-                     type="number" 
-                     placeholder="Стоимость до" 
-                     class="form-control">
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="input-group input-group-sm">
-              <input v-model="columnFilters.date_from" 
-                     type="date" 
-                     placeholder="Дата от" 
-                     class="form-control">
-              <input v-model="columnFilters.date_to" 
-                     type="date" 
-                     placeholder="Дата до" 
-                     class="form-control">
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-12 d-flex justify-content-end">
-            <button @click="resetFilters" class="btn btn-sm btn-outline-secondary me-2">
-              Сбросить фильтры
-            </button>
-            <button @click="exportToExcel" class="btn btn-sm btn-success" :disabled="loading">
-              📊 Экспорт в Excel
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Список конфигураций -->
-    <div class="card">
-      <div class="card-header d-flex justify-content-between">
-        <h5 class="mb-0">Список конфигураций ({{ filteredConfigs.length }})</h5>
-        <button @click="loadData" class="btn btn-outline-primary btn-sm">Обновить</button>
-      </div>
-      
-      <div class="card-body">
-        <div v-if="loading" class="text-center py-3">
-          <div class="spinner-border text-primary"></div>
-        </div>
-        
-        <div v-else-if="filteredConfigs.length === 0" class="text-center py-4 text-muted">
-          Конфигураций нет
-        </div>
-        
-        <div v-else class="table-responsive">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Название</th>
-                <th>Стоимость</th>
-                <th>Дата</th>
-                <th>Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="config in filteredConfigs" :key="config.id">
-                <td>{{ config.id }}</td>
-                <td><strong>{{ config.name }}</strong></td>
-                <td class="text-success"><strong>${{ config.total_price }}</strong></td>
-                <td>{{ formatDate(config.created_at) }}</td>
-                <td>
-                  <button @click="editConfig(config)" class="btn btn-warning btn-sm me-1">Изменить</button>
-                  <button @click="showDetails(config)" class="btn btn-info btn-sm me-1">Детали</button>
-                  <button @click="deleteConfig(config.id)" class="btn btn-danger btn-sm">Удалить</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Модальное окно деталей -->
-    <div v-if="selectedConfig" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Детали конфигурации</h5>
-            <button type="button" class="btn-close" @click="selectedConfig = null"></button>
-          </div>
-          
-          <div class="modal-body">
-            <p><strong>Название:</strong> {{ selectedConfig.name }}</p>
-            <p><strong>Описание:</strong> {{ selectedConfig.description || '-' }}</p>
-            <p><strong>Общая стоимость:</strong> ${{ selectedConfig.total_price }}</p>
-            
-            <div class="mt-3">
-              <h6>Компоненты:</h6>
-              <ul class="list-group">
-                <li class="list-group-item" v-for="type in componentTypes" :key="type.id">
-                  <strong>{{ type.name }}:</strong> 
-                  {{ getComponentName(selectedConfig[getFieldName(type.name)]) }}
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="selectedConfig = null">Закрыть</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script>
 import axios from 'axios';
 
@@ -450,6 +261,196 @@ export default {
   }
 }
 </script>
+
+<template>
+  <div class="container mt-4">
+    <h1 class="mb-4">Управление конфигурациями ПК</h1>
+    
+    <div class="alert alert-info mb-3">
+      Цены в долларах ($)
+    </div>
+
+   
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Добавить' }} конфигурацию</h5>
+      </div>
+      <div class="card-body">
+        <form @submit.prevent="saveConfig">
+          <div class="mb-3">
+            <label class="form-label">Название:</label>
+            <input v-model="form.name" type="text" class="form-control" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Описание:</label>
+            <textarea v-model="form.description" class="form-control" rows="2"></textarea>
+          </div>
+
+          <h5>Выбор компонентов</h5>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3" v-for="type in componentTypes" :key="type.id">
+              <label class="form-label">{{ type.name }}:</label>
+              <select v-model="form[getFieldName(type.name)]" class="form-select" required>
+                <option value="">Выберите</option>
+                <option 
+                  v-for="comp in getComponents(type.id)" 
+                  :key="comp.id" 
+                  :value="comp.id"
+                >
+                  {{ comp.name }} (${{ comp.price }})
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="alert alert-light mb-3">
+            <strong>Общая стоимость: ${{ calculateTotal() }}</strong>
+          </div>
+
+          <div>
+            <button type="submit" class="btn btn-success" :disabled="loading">
+              {{ isEditing ? 'Сохранить' : 'Добавить' }}
+            </button>
+            <button type="button" v-if="isEditing" @click="cancelEdit" class="btn btn-secondary ms-2">
+              Отмена
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+   
+    <div class="card mb-3">
+      <div class="card-header">
+        <h6 class="mb-0">Фильтры по столбцам</h6>
+      </div>
+      <div class="card-body">
+        <div class="row mb-2">
+          <div class="col-md-4">
+            <input v-model="columnFilters.name" 
+                   placeholder="Название" 
+                   class="form-control form-control-sm">
+          </div>
+          <div class="col-md-4">
+            <div class="input-group input-group-sm">
+              <input v-model="columnFilters.price_min" 
+                     type="number" 
+                     placeholder="Стоимость от" 
+                     class="form-control">
+              <input v-model="columnFilters.price_max" 
+                     type="number" 
+                     placeholder="Стоимость до" 
+                     class="form-control">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="input-group input-group-sm">
+              <input v-model="columnFilters.date_from" 
+                     type="date" 
+                     placeholder="Дата от" 
+                     class="form-control">
+              <input v-model="columnFilters.date_to" 
+                     type="date" 
+                     placeholder="Дата до" 
+                     class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12 d-flex justify-content-end">
+            <button @click="resetFilters" class="btn btn-sm btn-outline-secondary me-2">
+              Сбросить фильтры
+            </button>
+            <button @click="exportToExcel" class="btn btn-sm btn-success" :disabled="loading">
+              📊 Экспорт в Excel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <h5 class="mb-0">Список конфигураций ({{ filteredConfigs.length }})</h5>
+        <button @click="loadData" class="btn btn-outline-primary btn-sm">Обновить</button>
+      </div>
+      
+      <div class="card-body">
+        <div v-if="loading" class="text-center py-3">
+          <div class="spinner-border text-primary"></div>
+        </div>
+        
+        <div v-else-if="filteredConfigs.length === 0" class="text-center py-4 text-muted">
+          Конфигураций нет
+        </div>
+        
+        <div v-else class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Стоимость</th>
+                <th>Дата</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="config in filteredConfigs" :key="config.id">
+                <td>{{ config.id }}</td>
+                <td><strong>{{ config.name }}</strong></td>
+                <td class="text-success"><strong>${{ config.total_price }}</strong></td>
+                <td>{{ formatDate(config.created_at) }}</td>
+                <td>
+                  <button @click="editConfig(config)" class="btn btn-warning btn-sm me-1">Изменить</button>
+                  <button @click="showDetails(config)" class="btn btn-info btn-sm me-1">Детали</button>
+                  <button @click="deleteConfig(config.id)" class="btn btn-danger btn-sm">Удалить</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    
+    <div v-if="selectedConfig" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Детали конфигурации</h5>
+            <button type="button" class="btn-close" @click="selectedConfig = null"></button>
+          </div>
+          
+          <div class="modal-body">
+            <p><strong>Название:</strong> {{ selectedConfig.name }}</p>
+            <p><strong>Описание:</strong> {{ selectedConfig.description || '-' }}</p>
+            <p><strong>Общая стоимость:</strong> ${{ selectedConfig.total_price }}</p>
+            
+            <div class="mt-3">
+              <h6>Компоненты:</h6>
+              <ul class="list-group">
+                <li class="list-group-item" v-for="type in componentTypes" :key="type.id">
+                  <strong>{{ type.name }}:</strong> 
+                  {{ getComponentName(selectedConfig[getFieldName(type.name)]) }}
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="selectedConfig = null">Закрыть</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+
 
 <style scoped>
 .table-responsive {

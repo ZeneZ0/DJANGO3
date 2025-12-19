@@ -1,4 +1,50 @@
-<!-- site_back/src/views/ReactiveView.vue -->
+<script>
+export default {
+  name: 'ReactiveView',
+  data() {
+    return {
+      name: 'Иван',
+      age: 25,
+      budget: 1500,
+      boxColor: '#e8f4fd'
+    }
+  },
+  computed: {
+    birthYear() {
+      return 2024 - this.age;
+    },
+    
+    budgetCategory() {
+      if (this.budget < 500) return 'Бюджетный';
+      if (this.budget < 1200) return 'Средний';
+      if (this.budget < 2500) return 'Высокий';
+      return 'Элитный';
+    },
+    
+    buildPrice() {
+      return 500 + (this.age * 20);
+    },
+    
+    statusText() {
+      if (this.budget >= this.buildPrice) {
+        return 'Достаточно';
+      } else {
+        return 'Мало';
+      }
+    },
+    
+    statusClass() {
+      return this.budget >= this.buildPrice ? 'status-ok' : 'status-bad';
+    }
+  },
+  watch: {
+    budget(newVal, oldVal) {
+      console.log('Бюджет изменился с', oldVal, 'на', newVal);
+    }
+  }
+}
+</script>
+
 <template>
   <div class="reactive">
     <h1>Реактивные переменные</h1>
@@ -62,52 +108,7 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'ReactiveView',
-  data() {
-    return {
-      name: 'Иван',
-      age: 25,
-      budget: 1500,
-      boxColor: '#e8f4fd'
-    }
-  },
-  computed: {
-    birthYear() {
-      return 2024 - this.age;
-    },
-    
-    budgetCategory() {
-      if (this.budget < 500) return 'Бюджетный';
-      if (this.budget < 1200) return 'Средний';
-      if (this.budget < 2500) return 'Высокий';
-      return 'Элитный';
-    },
-    
-    buildPrice() {
-      return 500 + (this.age * 20);
-    },
-    
-    statusText() {
-      if (this.budget >= this.buildPrice) {
-        return 'Достаточно';
-      } else {
-        return 'Мало';
-      }
-    },
-    
-    statusClass() {
-      return this.budget >= this.buildPrice ? 'status-ok' : 'status-bad';
-    }
-  },
-  watch: {
-    budget(newVal, oldVal) {
-      console.log('Бюджет изменился с', oldVal, 'на', newVal);
-    }
-  }
-}
-</script>
+
 
 <style>
 .reactive {

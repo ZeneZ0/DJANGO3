@@ -11,6 +11,7 @@ class ComponentType(models.Model):
 
 class Manufacturer(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название производителя")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
     country = models.CharField(max_length=50, verbose_name="Страна")
     website = models.URLField(blank=True, verbose_name="Веб-сайт")
     logo = models.ImageField("Логотип", upload_to="manufacturers/", blank=True, null=True)
@@ -20,6 +21,7 @@ class Manufacturer(models.Model):
 
 class Component(models.Model):
     name = models.CharField(max_length=200, verbose_name="Название")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
     component_type = models.ForeignKey(ComponentType, on_delete=models.CASCADE, verbose_name="Тип компонента")
     manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, verbose_name="Производитель")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
@@ -34,6 +36,7 @@ class Component(models.Model):
 
 class PCConfiguration(models.Model):
     name = models.CharField(max_length=200, verbose_name="Название конфигурации")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
     description = models.TextField(blank=True, verbose_name="Описание конфигурации")
     cpu = models.ForeignKey(Component, on_delete=models.CASCADE, related_name="cpu_configs", verbose_name="Процессор")
     gpu = models.ForeignKey(Component, on_delete=models.CASCADE, related_name="gpu_configs", verbose_name="Видеокарта")

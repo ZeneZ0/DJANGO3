@@ -66,10 +66,12 @@ class BuildRequestSerializer(serializers.ModelSerializer):
             'id', 'user', 'user_name', 'configuration', 'configuration_name',
             'status', 'budget', 'notes', 'created_at', 'updated_at'
         ]
+        extra_kwargs = {'user': {'required': False}}
     
     def create(self, validated_data):
-        # Автоматически привязываем к текущему пользователю
-        if 'request' in self.context:
+        # Если пользователь не передан (например, обычный юзер),
+        # то берем из request.user
+        if 'user' not in validated_data and 'request' in self.context:
             validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 

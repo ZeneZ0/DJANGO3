@@ -3,7 +3,7 @@
   <div class="container mt-4">
     <h1 class="mb-4">Управление производителями</h1>
 
-    
+    <!-- Форма -->
     <div class="card mb-4">
       <div class="card-header">
         <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Добавить' }} производителя</h5>
@@ -26,7 +26,7 @@
               <input v-model="form.website" type="url" class="form-control" placeholder="https://example.com">
             </div>
             
-            
+            <!-- Загрузка логотипа -->
             <div class="col-12 mb-3">
               <label class="form-label">Логотип</label>
               <input 
@@ -38,14 +38,14 @@
               >
               <div class="form-text">JPG, PNG, GIF</div>
               
-              
+              <!-- Предпросмотр -->
               <div v-if="imagePreview" class="mt-3">
                 <p class="mb-2">Предпросмотр:</p>
                 <img :src="imagePreview" class="img-thumbnail" style="max-height: 150px; cursor: pointer" 
                      @click="showImageModal(imagePreview)">
               </div>
               
-              
+              <!-- Текущее изображение -->
               <div v-else-if="isEditing && currentLogo" class="mt-3">
                 <p class="mb-2">Текущий логотип:</p>
                 <img :src="currentLogo" class="img-thumbnail" style="max-height: 150px; cursor: pointer"
@@ -66,7 +66,7 @@
       </div>
     </div>
 
-    
+    <!-- Список производителей -->
     <div class="card">
       <div class="card-header d-flex justify-content-between">
         <h5 class="mb-0">Список производителей ({{ manufacturers.length }})</h5>
@@ -124,7 +124,7 @@
       </div>
     </div>
 
-    
+    <!-- Модальное окно для просмотра изображения -->
     <div v-if="showModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.8)">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -182,7 +182,7 @@ export default {
       if (file) {
         this.imageFile = file;
         
-        
+        // Создаем preview
         const reader = new FileReader();
         reader.onload = (e) => {
           this.imagePreview = e.target.result;
@@ -196,14 +196,14 @@ export default {
       try {
         const formData = new FormData();
         
-        
+        // Добавляем текстовые данные
         formData.append('name', this.form.name);
         formData.append('country', this.form.country);
         if (this.form.website) {
           formData.append('website', this.form.website);
         }
         
-        
+        // Добавляем файл, если есть
         if (this.imageFile) {
           formData.append('logo', this.imageFile);
         }

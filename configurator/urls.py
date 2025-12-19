@@ -1,33 +1,36 @@
 # configurator/urls.py
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
 from .api import (
-    ComponentTypeList, ManufacturerList, ComponentList, PCConfigurationList,
-    BuildRequestList, BuildRequestDetail, UserList,
-    ComponentTypeCreate, ManufacturerCreate, ComponentCreate, PCConfigurationCreate
+    ComponentViewSet, ManufacturerViewSet, ComponentTypeViewSet,
+    PCConfigurationViewSet, BuildRequestViewSet,
+    login_view, logout_view, user_info_view, dashboard_stats_view,
+    UserList
 )
 
+router = DefaultRouter()
+router.register(r'component-types', ComponentTypeViewSet, basename='component-type')
+router.register(r'manufacturers', ManufacturerViewSet, basename='manufacturer')
+router.register(r'components', ComponentViewSet, basename='component')
+router.register(r'configurations', PCConfigurationViewSet, basename='configuration')
+router.register(r'build-requests', BuildRequestViewSet, basename='build-request')
+
 urlpatterns = [
-    # HTML pages
     path('', views.home_page, name='home'),
     path('about/', views.about_page, name='about'),
     
-    # Публичные API (чтение)
-    path('component-types/', ComponentTypeList.as_view(), name='componenttype-list'),
-    path('manufacturers/', ManufacturerList.as_view(), name='manufacturer-list'),
-    path('components/', ComponentList.as_view(), name='component-list'),
-    path('configurations/', PCConfigurationList.as_view(), name='pcconfiguration-list'),
-    
-    # API для заявок (требуют аутентификации)
-    path('build-requests/', BuildRequestList.as_view(), name='buildrequest-list'),
-    path('build-requests/<int:pk>/', BuildRequestDetail.as_view(), name='buildrequest-detail'),
-    
-    # Админские API (создание)
-    path('admin/component-types/', ComponentTypeCreate.as_view(), name='componenttype-create'),
-    path('admin/manufacturers/', ManufacturerCreate.as_view(), name='manufacturer-create'),
-    path('admin/components/', ComponentCreate.as_view(), name='component-create'),
-    path('admin/configurations/', PCConfigurationCreate.as_view(), name='pcconfiguration-create'),
+    # Включаем все маршруты из роутера
+    path('', include(router.urls)),
     
     # Пользователи (только для админа)
-    path('admin/users/', UserList.as_view(), name='user-list'),
+    path('management/users/', UserList.as_view(), name='user-list'),
+
+    # Auth
+    path('auth/login/', login_view, name='login'),
+    path('auth/logout/', logout_view, name='logout'),
+    path('auth/user/', user_info_view, name='user_info'),
+    
+    # Stats
+    path('stats/', dashboard_stats_view, name='stats'),
 ]

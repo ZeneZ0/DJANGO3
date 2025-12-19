@@ -58,10 +58,60 @@
       </div>
     </div>
 
+    <!-- Фильтры по столбцам -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <h6 class="mb-0">Фильтры по столбцам</h6>
+      </div>
+      <div class="card-body">
+        <div class="row mb-2">
+          <div class="col-md-4">
+            <input v-model="columnFilters.name" 
+                   placeholder="Название" 
+                   class="form-control form-control-sm">
+          </div>
+          <div class="col-md-4">
+            <div class="input-group input-group-sm">
+              <input v-model="columnFilters.price_min" 
+                     type="number" 
+                     placeholder="Стоимость от" 
+                     class="form-control">
+              <input v-model="columnFilters.price_max" 
+                     type="number" 
+                     placeholder="Стоимость до" 
+                     class="form-control">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="input-group input-group-sm">
+              <input v-model="columnFilters.date_from" 
+                     type="date" 
+                     placeholder="Дата от" 
+                     class="form-control">
+              <input v-model="columnFilters.date_to" 
+                     type="date" 
+                     placeholder="Дата до" 
+                     class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12 d-flex justify-content-end">
+            <button @click="resetFilters" class="btn btn-sm btn-outline-secondary me-2">
+              Сбросить фильтры
+            </button>
+            <button @click="exportToExcel" class="btn btn-sm btn-success" :disabled="loading">
+              📊 Экспорт в Excel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Список конфигураций -->
     <div class="card">
       <div class="card-header d-flex justify-content-between">
-        <h5 class="mb-0">Список конфигураций ({{ configs.length }})</h5>
+        <h5 class="mb-0">Список конфигураций ({{ filteredConfigs.length }})</h5>
         <button @click="loadData" class="btn btn-outline-primary btn-sm">Обновить</button>
       </div>
       
@@ -70,7 +120,7 @@
           <div class="spinner-border text-primary"></div>
         </div>
         
-        <div v-else-if="configs.length === 0" class="text-center py-4 text-muted">
+        <div v-else-if="filteredConfigs.length === 0" class="text-center py-4 text-muted">
           Конфигураций нет
         </div>
         
@@ -86,7 +136,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="config in configs" :key="config.id">
+              <tr v-for="config in filteredConfigs" :key="config.id">
                 <td>{{ config.id }}</td>
                 <td><strong>{{ config.name }}</strong></td>
                 <td class="text-success"><strong>${{ config.total_price }}</strong></td>
@@ -140,6 +190,21 @@
 <script>
 import axios from 'axios';
 
+function getCookie(name) {
+  let cookieValue = null
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';')
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim()
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
+        break
+      }
+    }
+  }
+  return cookieValue
+}
+
 export default {
   name: 'PCConfigurationsView',
   data() {
@@ -151,6 +216,13 @@ export default {
       isEditing: false,
       editId: null,
       selectedConfig: null,
+      columnFilters: {
+        name: '',
+        price_min: '',
+        price_max: '',
+        date_from: '',
+        date_to: ''
+      },
       form: {
         name: '',
         description: '',
@@ -162,6 +234,43 @@ export default {
         power_supply: '',
         case: ''
       }
+    }
+  },
+  computed: {
+    filteredConfigs() {
+      let filtered = this.configs
+      
+      if (this.columnFilters.name) {
+        filtered = filtered.filter(config => 
+          config.name.toLowerCase().includes(this.columnFilters.name.toLowerCase())
+        )
+      }
+      
+      if (this.columnFilters.price_min) {
+        filtered = filtered.filter(config => 
+          config.total_price >= parseFloat(this.columnFilters.price_min)
+        )
+      }
+      
+      if (this.columnFilters.price_max) {
+        filtered = filtered.filter(config => 
+          config.total_price <= parseFloat(this.columnFilters.price_max)
+        )
+      }
+      
+      if (this.columnFilters.date_from) {
+        filtered = filtered.filter(config => 
+          new Date(config.created_at) >= new Date(this.columnFilters.date_from)
+        )
+      }
+      
+      if (this.columnFilters.date_to) {
+        filtered = filtered.filter(config => 
+          new Date(config.created_at) <= new Date(this.columnFilters.date_to)
+        )
+      }
+      
+      return filtered
     }
   },
   methods: {
@@ -190,6 +299,40 @@ export default {
       }
     },
 
+    async exportToExcel() {
+  this.loading = true
+  try {
+    const params = {}
+    if (this.columnFilters.name) params.name = this.columnFilters.name
+    if (this.columnFilters.price_min) params.price_min = this.columnFilters.price_min
+    if (this.columnFilters.price_max) params.price_max = this.columnFilters.price_max
+    if (this.columnFilters.date_from) params.date_from = this.columnFilters.date_from
+    if (this.columnFilters.date_to) params.date_to = this.columnFilters.date_to
+
+    const response = await axios.get('/api/configurations/export_excel/', {
+      responseType: 'blob',
+      params: params,
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    })
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `configurations_${new Date().toISOString().split('T')[0]}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    
+    alert('Файл успешно экспортирован')
+  } catch (error) {
+    console.error('Ошибка экспорта:', error)
+    alert('Ошибка при экспорте файла')
+  }
+  this.loading = false
+},
+
     getFieldName(typeName) {
       const map = {
         'Процессор': 'cpu',
@@ -209,7 +352,7 @@ export default {
 
     getComponentName(compId) {
       const comp = this.components.find(c => c.id === compId);
-      return comp ? comp.name : 'Неизвестно';
+      return comp ? `${comp.name} ($${comp.price})` : 'Неизвестно';
     },
 
     calculateTotal() {
@@ -289,6 +432,16 @@ export default {
         power_supply: '',
         case: ''
       };
+    },
+
+    resetFilters() {
+      this.columnFilters = {
+        name: '',
+        price_min: '',
+        price_max: '',
+        date_from: '',
+        date_to: ''
+      }
     }
   },
   mounted() {
@@ -304,6 +457,11 @@ export default {
 }
 
 .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.input-group-sm input {
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
 }

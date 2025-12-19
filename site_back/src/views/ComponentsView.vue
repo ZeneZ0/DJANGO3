@@ -7,7 +7,7 @@
       Цены в долларах ($)
     </div>
 
-  
+    <!-- Форма -->
     <div class="card mb-4">
       <div class="card-header">
         <h5 class="mb-0">{{ isEditing ? 'Редактировать' : 'Добавить' }} компонент</h5>
@@ -57,7 +57,7 @@
               </div>
             </div>
             
-            
+            <!-- Загрузка изображения -->
             <div class="col-12 mb-3">
               <label class="form-label">Изображение</label>
               <input 
@@ -68,14 +68,14 @@
                 ref="fileInput"
               >
               
-              
+              <!-- Предпросмотр -->
               <div v-if="imagePreview" class="mt-3">
                 <p class="mb-2">Предпросмотр:</p>
                 <img :src="imagePreview" class="img-thumbnail" style="max-height: 150px; cursor: pointer" 
                      @click="showImageModal(imagePreview)">
               </div>
               
-              
+              <!-- Текущее изображение -->
               <div v-else-if="isEditing && currentImage" class="mt-3">
                 <p class="mb-2">Текущее изображение:</p>
                 <img :src="currentImage" class="img-thumbnail" style="max-height: 150px; cursor: pointer"
@@ -96,10 +96,71 @@
       </div>
     </div>
 
-    
+    <!-- Фильтры по столбцам -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <h6 class="mb-0">Фильтры по столбцам</h6>
+      </div>
+      <div class="card-body">
+        <div class="row mb-2">
+          <div class="col-md-3">
+            <input v-model="columnFilters.name" 
+                   placeholder="Название" 
+                   class="form-control form-control-sm">
+          </div>
+          <div class="col-md-2">
+            <select v-model="columnFilters.component_type" class="form-select form-select-sm">
+              <option value="">Все типы</option>
+              <option v-for="type in componentTypes" :key="type.id" :value="type.id">
+                {{ type.name }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select v-model="columnFilters.manufacturer" class="form-select form-select-sm">
+              <option value="">Все производители</option>
+              <option v-for="man in manufacturers" :key="man.id" :value="man.id">
+                {{ man.name }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <div class="input-group input-group-sm">
+              <input v-model="columnFilters.price_min" 
+                     type="number" 
+                     placeholder="Цена от" 
+                     class="form-control">
+              <input v-model="columnFilters.price_max" 
+                     type="number" 
+                     placeholder="Цена до" 
+                     class="form-control">
+            </div>
+          </div>
+          <div class="col-md-2">
+            <select v-model="columnFilters.in_stock" class="form-select form-select-sm">
+              <option value="">Любое наличие</option>
+              <option value="true">В наличии</option>
+              <option value="false">Нет в наличии</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12 d-flex justify-content-end">
+            <button @click="resetFilters" class="btn btn-sm btn-outline-secondary me-2">
+              Сбросить фильтры
+            </button>
+            <button @click="exportToExcel" class="btn btn-sm btn-success" :disabled="loading">
+              📊 Экспорт в Excel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Список компонентов -->
     <div class="card">
       <div class="card-header d-flex justify-content-between">
-        <h5 class="mb-0">Список компонентов ({{ components.length }})</h5>
+        <h5 class="mb-0">Список компонентов ({{ filteredComponents.length }})</h5>
         <div>
           <button @click="loadData" class="btn btn-outline-primary btn-sm me-2">Обновить</button>
           <button @click="loadReferenceData" class="btn btn-outline-info btn-sm">Загрузить справочники</button>
@@ -111,7 +172,7 @@
           <div class="spinner-border text-primary"></div>
         </div>
         
-        <div v-else-if="components.length === 0" class="text-center py-4 text-muted">
+        <div v-else-if="filteredComponents.length === 0" class="text-center py-4 text-muted">
           Компонентов нет
         </div>
         
@@ -129,7 +190,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="comp in components" :key="comp.id" :class="{ 'table-warning': !comp.in_stock }">
+              <tr v-for="comp in filteredComponents" :key="comp.id" :class="{ 'table-warning': !comp.in_stock }">
                 <td>
                   <img 
                     v-if="comp.image_url" 
@@ -161,7 +222,7 @@
       </div>
     </div>
 
-    
+    <!-- Модальное окно деталей -->
     <div v-if="selectedComponent" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -201,7 +262,7 @@
       </div>
     </div>
 
-    
+    <!-- Модальное окно для изображения -->
     <div v-if="showImageModal" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -221,6 +282,21 @@
 <script>
 import axios from 'axios';
 
+function getCookie(name) {
+  let cookieValue = null
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';')
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim()
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
+        break
+      }
+    }
+  }
+  return cookieValue
+}
+
 export default {
   name: 'ComponentsView',
   data() {
@@ -237,6 +313,14 @@ export default {
       imageFile: null,
       imagePreview: null,
       currentImage: '',
+      columnFilters: {
+        name: '',
+        component_type: '',
+        manufacturer: '',
+        price_min: '',
+        price_max: '',
+        in_stock: ''
+      },
       form: {
         name: '',
         component_type: '',
@@ -245,6 +329,49 @@ export default {
         description: '',
         in_stock: true
       }
+    }
+  },
+  computed: {
+    filteredComponents() {
+      let filtered = this.components
+      
+      if (this.columnFilters.name) {
+        filtered = filtered.filter(comp => 
+          comp.name.toLowerCase().includes(this.columnFilters.name.toLowerCase())
+        )
+      }
+      
+      if (this.columnFilters.component_type) {
+        filtered = filtered.filter(comp => 
+          comp.component_type == this.columnFilters.component_type
+        )
+      }
+      
+      if (this.columnFilters.manufacturer) {
+        filtered = filtered.filter(comp => 
+          comp.manufacturer == this.columnFilters.manufacturer
+        )
+      }
+      
+      if (this.columnFilters.price_min) {
+        filtered = filtered.filter(comp => 
+          comp.price >= parseFloat(this.columnFilters.price_min)
+        )
+      }
+      
+      if (this.columnFilters.price_max) {
+        filtered = filtered.filter(comp => 
+          comp.price <= parseFloat(this.columnFilters.price_max)
+        )
+      }
+      
+      if (this.columnFilters.in_stock !== '') {
+        filtered = filtered.filter(comp => 
+          comp.in_stock === (this.columnFilters.in_stock === 'true')
+        )
+      }
+      
+      return filtered
     }
   },
   methods: {
@@ -278,7 +405,7 @@ export default {
       if (file) {
         this.imageFile = file;
         
-        
+        // Создаем preview
         const reader = new FileReader();
         reader.onload = (e) => {
           this.imagePreview = e.target.result;
@@ -292,7 +419,7 @@ export default {
       try {
         const formData = new FormData();
         
-        
+        // Текстовые данные
         formData.append('name', this.form.name);
         formData.append('component_type', this.form.component_type);
         formData.append('manufacturer', this.form.manufacturer);
@@ -300,7 +427,7 @@ export default {
         formData.append('description', this.form.description);
         formData.append('in_stock', this.form.in_stock);
         
-        
+        // Изображение
         if (this.imageFile) {
           formData.append('image', this.imageFile);
         }
@@ -329,66 +456,41 @@ export default {
       this.loading = false;
     },
 
-    editComponent(comp) {
-      this.isEditing = true;
-      this.editId = comp.id;
-      this.form = { 
-        name: comp.name,
-        component_type: comp.component_type,
-        manufacturer: comp.manufacturer,
-        price: comp.price,
-        description: comp.description || '',
-        in_stock: comp.in_stock
-      };
-      this.currentImage = comp.image_url;
-      this.imagePreview = null;
-      this.imageFile = null;
-    },
+async exportToExcel() {
+  this.loading = true
+  try {
+    const params = {}
+    if (this.columnFilters.name) params.name = this.columnFilters.name
+    if (this.columnFilters.component_type) params.component_type = this.columnFilters.component_type
+    if (this.columnFilters.manufacturer) params.manufacturer = this.columnFilters.manufacturer
+    if (this.columnFilters.price_min) params.price_min = this.columnFilters.price_min
+    if (this.columnFilters.price_max) params.price_max = this.columnFilters.price_max
+    if (this.columnFilters.in_stock) params.in_stock = this.columnFilters.in_stock
 
-    cancelEdit() {
-      this.resetForm();
-    },
-
-    async deleteComponent(id) {
-      if (!confirm('Удалить компонент?')) return;
-      
-      try {
-        await axios.delete(`/api/components/${id}/`);
-        this.components = this.components.filter(c => c.id !== id);
-      } catch (error) {
-        console.error('Ошибка удаления:', error);
-        alert('Ошибка удаления');
+    const response = await axios.get('/api/components/export_excel/', {
+      responseType: 'blob',
+      params: params,
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken')
       }
-    },
-
-    showDetails(comp) {
-      this.selectedComponent = comp;
-    },
-
-    showImageModal(imageUrl) {
-      this.modalImage = imageUrl;
-      this.showImageModal = true;
-    },
-
-    resetForm() {
-      this.isEditing = false;
-      this.editId = null;
-      this.form = {
-        name: '',
-        component_type: '',
-        manufacturer: '',
-        price: 0,
-        description: '',
-        in_stock: true
-      };
-      this.imageFile = null;
-      this.imagePreview = null;
-      this.currentImage = '';
-      if (this.$refs.fileInput) {
-        this.$refs.fileInput.value = '';
-      }
-    }
-  },
+    })
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `components_${new Date().toISOString().split('T')[0]}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    
+    alert('Файл успешно экспортирован')
+  } catch (error) {
+    console.error('Ошибка экспорта:', error)
+    alert('Ошибка при экспорте файла')
+  }
+  this.loading = false
+}
+},
   mounted() {
     this.loadData();
     this.loadReferenceData();
@@ -404,5 +506,10 @@ export default {
 
 .table-warning {
   background-color: rgba(255, 193, 7, 0.1);
+}
+
+.input-group-sm input {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
 }
 </style>

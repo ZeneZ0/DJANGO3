@@ -9,6 +9,11 @@ const routes = [
     component: HomeView
   },
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('../views/LoginView.vue')
+  },
+  {
     path: '/about',
     name: 'about',
     component: () => import('../views/AboutView.vue')
@@ -24,36 +29,42 @@ const routes = [
     component: () => import('../views/ArraysView.vue')
   },
   {
-    path: '/data',
-    name: 'data',
+    path: '/backend-data',
+    name: 'backend-data',
     component: () => import('../views/BackendDataView.vue')
   },
-  
+  // Management Routes
   {
-    path: '/component-types',
+    path: '/manage/component-types',
     name: 'component-types',
     component: () => import('../views/ComponentTypesView.vue')
   },
   {
-    path: '/manufacturers',
+    path: '/manage/manufacturers',
     name: 'manufacturers',
     component: () => import('../views/ManufacturersView.vue')
   },
   {
-    path: '/components',
+    path: '/manage/components',
     name: 'components',
     component: () => import('../views/ComponentsView.vue')
   },
   {
-    path: '/configs', 
-    name: 'configs',
+    path: '/manage/configurations',
+    name: 'configurations',
     component: () => import('../views/PCConfigurationsView.vue')
   },
   {
-    path: '/requests',
-    name: 'requests',
+    path: '/manage/build-requests',
+    name: 'build-requests',
     component: () => import('../views/BuildRequestsView.vue')
-  }
+  },
+
+  // Redirects for legacy/broken paths
+  { path: '/components', redirect: '/manage/components' },
+  { path: '/configs', redirect: '/manage/configurations' },
+  { path: '/requests', redirect: '/manage/build-requests' },
+  { path: '/data', redirect: '/backend-data' }
 ]
 
 const router = createRouter({
